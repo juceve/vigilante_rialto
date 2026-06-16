@@ -1,0 +1,53 @@
+CREATE VIEW vwasistencias AS
+SELECT a.id, a.fecha,t.cliente_id,c.nombre cliente, c.oficina_id, d.empleado_id,CONCAT(e.nombres," ",e.apellidos) empleado,
+a.ingreso,a.salida,a.latingreso,a.lngingreso,a.latsalida,a.lngsalida,d.turno_id,t.nombre turno,
+t.horainicio turno_horainicio,t.horafin turno_horafin, d.id as designacione_id, a.estado
+FROM asistencias a
+INNER JOIN designaciones d ON d.id = a.designacione_id
+INNER JOIN turnos t ON t.id=d.turno_id
+INNER JOIN clientes c ON c.id=t.cliente_id
+INNER JOIN empleados e ON e.id=d.empleado_id;
+
+CREATE VIEW vwdesignaciones AS
+SELECT d.id, fechaInicio, fechaFin,intervalo_hv,d.observaciones, d.tipo,
+d.empleado_id, CONCAT(e.nombres," ",e.apellidos) empleado,
+t.cliente_id, c.nombre cliente, c.oficina_id, d.turno_id,t.nombre turno, t.horainicio,t.horafin,d.estado
+FROM designaciones d
+INNER JOIN turnos t ON t.id = d.turno_id
+INNER JOIN clientes c ON c.id=t.cliente_id
+INNER JOIN empleados e ON e.id = d.empleado_id;
+
+CREATE VIEW vwnovedades AS
+SELECT n.*, d.empleado_id,CONCAT(e.nombres," ",e.apellidos) empleado, t.cliente_id,c.nombre cliente,
+d.turno_id, t.nombre turno FROM novedades n
+INNER JOIN designaciones d ON d.id = n.designacione_id
+INNER JOIN empleados e ON e.id = d.empleado_id
+LEFT JOIN turnos t ON t.id = d.turno_id
+LEFT JOIN clientes c on c.id = t.cliente_id;
+
+CREATE VIEW vwpanicos AS
+SELECT r.id, r.fechahora, DATE(r.fechahora) fecha, r.prioridad, r.user_id, r.detalle, r.latitud, r.longitud, r.visto,r.cliente_id,c.nombre cliente
+FROM registroguardias r
+INNER JOIN clientes c ON c.id=r.cliente_id;
+
+CREATE VIEW vwrondas AS
+SELECT rr.id, d.empleado_id,CONCAT(e.nombres," ",e.apellidos) empleado, t.cliente_id,c.nombre cliente,
+d.turno_id, t.nombre turno, rr.latA lat, rr.lngA lng, rr.fecha, rr.hora, rr.anotaciones,
+rr.ctrlpunto_id FROM regrondas rr
+INNER JOIN designaciones d ON d.id = rr.designacione_id
+INNER JOIN empleados e ON e.id = d.empleado_id
+INNER JOIN turnos t ON t.id = d.turno_id
+INNER JOIN clientes c on c.id = t.cliente_id;
+
+CREATE VIEW vwtareas AS
+SELECT t.*,c.nombre nombrecliente,CONCAT(e.nombres," ",e.apellidos) nombreempleado FROM tareas t
+INNER JOIN clientes c ON c.id=t.cliente_id
+INNER JOIN empleados e ON e.id=t.empleado_id;
+
+CREATE VIEW vwvisitas AS
+SELECT v.id ,c.id cliente_id,c.nombre cliente,DATE(v.created_at) fechaingreso, TIME(v.created_at) horaingreso,DATE(v.updated_at) fechasalida,TIME(v.updated_at) horasalida, v.nombre visitante, v.docidentidad,v.nrovivienda, v.residente,m.nombre motivo,v.otros,v.observaciones,v.estado estado,v.imgs,d.empleado_id, CONCAT(e.nombres," ",e.apellidos) empleado FROM visitas v
+INNER JOIN designaciones d ON d.id=v.designacione_id
+INNER JOIN turnos t on t.id=d.turno_id
+INNER JOIN clientes c on c.id=t.cliente_id
+INNER JOIN motivos m ON m.id=v.motivo_id
+INNER JOIN empleados e ON e.id=d.empleado_id;

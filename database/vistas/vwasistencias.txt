@@ -1,0 +1,9 @@
+CREATE VIEW vwasistencias AS
+SELECT a.id, a.fecha,t.cliente_id,c.nombre cliente, c.oficina_id, d.empleado_id,CONCAT(e.nombres," ",e.apellidos) empleado,
+a.ingreso,a.salida,a.latingreso,a.lngingreso,a.latsalida,a.lngsalida,d.turno_id,t.nombre turno,
+t.horainicio turno_horainicio,t.horafin turno_horafin, d.id as designacione_id, a.estado
+FROM asistencias a
+INNER JOIN designaciones d ON d.id = a.designacione_id
+INNER JOIN turnos t ON t.id=d.turno_id
+INNER JOIN clientes c ON c.id=t.cliente_id
+INNER JOIN empleados e ON e.id=d.empleado_id

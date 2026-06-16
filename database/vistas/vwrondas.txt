@@ -1,0 +1,8 @@
+CREATE VIEW vwrondas AS
+SELECT rr.id, d.empleado_id,CONCAT(e.nombres," ",e.apellidos) empleado, t.cliente_id,c.nombre cliente, 
+d.turno_id, t.nombre turno, rr.latA lat, rr.lngA lng, rr.fecha, rr.hora, rr.anotaciones,
+rr.ctrlpunto_id FROM regrondas rr
+INNER JOIN designaciones d ON d.id = rr.designacione_id
+INNER JOIN empleados e ON e.id = d.empleado_id
+INNER JOIN turnos t ON t.id = d.turno_id
+INNER JOIN clientes c on c.id = t.cliente_id

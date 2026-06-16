@@ -1,0 +1,7 @@
+CREATE VIEW vwvisitas AS
+SELECT v.id ,c.id cliente_id,c.nombre cliente,DATE(v.created_at) fechaingreso, TIME(v.created_at) horaingreso,DATE(v.updated_at) fechasalida,TIME(v.updated_at) horasalida, v.nombre visitante, v.docidentidad,v.nrovivienda, v.residente,m.nombre motivo,v.otros,v.observaciones,v.estado estado,v.imgs,d.empleado_id, CONCAT(e.nombres," ",e.apellidos) empleado FROM visitas v
+INNER JOIN designaciones d ON d.id=v.designacione_id
+INNER JOIN turnos t on t.id=d.turno_id
+INNER JOIN clientes c on c.id=t.cliente_id
+INNER JOIN motivos m ON m.id=v.motivo_id
+INNER JOIN empleados e ON e.id=d.empleado_id

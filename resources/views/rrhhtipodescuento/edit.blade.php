@@ -1,0 +1,46 @@
+@extends('adminlte::page')
+
+@section('title')
+    Editar Tipo de Descuento
+@endsection
+@section('content_header')
+    <h4>Editar Tipo de Descuento</h4>
+@endsection
+@section('content')
+    <section class="content container-fluid">
+        <div class="">
+            <div class="col-md-12">
+
+                @includeif('partials.errors')
+
+                <div class="card card-default">
+                    <div class="card-header bg-info">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+
+                            <span id="card_title">
+                                Formulario de Edición
+                            </span>
+
+                            <div class="float-right">
+                                <a href="javascript:history.back()" class="btn btn-info btn-sm float-right"
+                                    data-placement="left">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ route('rrhhtipodescuentos.update', $rrhhtipodescuento->id) }}"
+                            role="form" enctype="multipart/form-data">
+                            {{ method_field('PATCH') }}
+                            @csrf
+
+                            @include('rrhhtipodescuento.form')
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+@endsection

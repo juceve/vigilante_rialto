@@ -1,0 +1,4 @@
+CREATE VIEW vwtareas AS
+SELECT t.*,c.nombre nombrecliente,CONCAT(e.nombres," ",e.apellidos) nombreempleado FROM tareas t
+INNER JOIN clientes c ON c.id=t.cliente_id
+INNER JOIN empleados e ON e.id=t.empleado_id

@@ -1,0 +1,4 @@
+CREATE VIEW vwpanicos AS
+SELECT r.id, r.fechahora, DATE(r.fechahora) fecha, r.prioridad, r.user_id, r.detalle, r.latitud, r.longitud, r.visto,r.cliente_id,c.nombre cliente 
+FROM registroguardias r
+INNER JOIN clientes c ON c.id=r.cliente_id

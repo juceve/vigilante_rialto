@@ -1,0 +1,8 @@
+CREATE VIEW vwdesignaciones AS
+SELECT d.id, fechaInicio, fechaFin,intervalo_hv,d.observaciones, d.tipo,
+d.empleado_id, CONCAT(e.nombres," ",e.apellidos) empleado,
+t.cliente_id, c.nombre cliente, c.oficina_id, d.turno_id,t.nombre turno,t.horainicio,t.horafin, d.estado
+FROM designaciones d
+LEFT JOIN turnos t ON t.id = d.turno_id
+INNER JOIN clientes c ON c.id=t.cliente_id
+INNER JOIN empleados e ON e.id = d.empleado_id
