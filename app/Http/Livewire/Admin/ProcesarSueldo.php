@@ -21,6 +21,8 @@ use DateTime;
 use Illuminate\Support\Facades\DB;
 use Carbon\CarbonPeriod;
 
+use function PHPUnit\Framework\isNull;
+
 class ProcesarSueldo extends Component
 {
     public $rrhhsueldo;
@@ -33,10 +35,7 @@ class ProcesarSueldo extends Component
 
     protected $listeners = ['guardarSueldos', 'setContratosSeleccionados'];
 
-    public function setContratosSeleccionados($ids)
-    {
-        $this->contratosSeleccionados = $ids;
-    }
+
 
     public function mount($rrhhsueldo_id)
     {
@@ -66,28 +65,36 @@ class ProcesarSueldo extends Component
         return $contratos->map(function ($contrato) {
             $dias_tipo = $contrato->rrhhtipocontrato->cantidad_dias ?? 30;
 
-            return [
-                'id' => $contrato->id,
-                'empleado_id' => $contrato->empleado->id,
-                'nombres' => $contrato->empleado->nombres,
-                'apellidos' => $contrato->empleado->apellidos,
-                'fecha_inicio' => $contrato->fecha_inicio,
-                'fecha_fin' => $contrato->fecha_fin ?? 'Indefinido',
-                'salario_basico' => $contrato->salario_basico,
-                'tipo_contrato' => $contrato->rrhhtipocontrato->nombre ?? 'N/A',
-                'valor_dia' => '0',
-                'dias_procesables' => '0',
-                'salario_mes' => $contrato->salario_basico,
-                'total_ctrlasistencias' => '0',
-                'total_permisos' => '0',
-                'total_adelantos' => '0',
-                'total_bonos' => '0',
-                'ids_bonos' => [],
-                'total_descuentos' => '0',
-                'liquido_pagable' => '0',
-                'detalle_pago' => '0',
-                'calendario_laboral' => $dias_tipo,
-            ];
+            return
+                [
+                    'id' => $contrato->id,
+                    'empleado_id' => $contrato->empleado->id,
+                    'nombres' => $contrato->empleado->nombres,
+                    'apellidos' => $contrato->empleado->apellidos,
+                    'fecha_inicio' => $contrato->fecha_inicio,
+                    'fecha_fin' => $contrato->fecha_fin ?? 'Indefinido',
+                    'salario_basico' => number_format($contrato->salario_basico, 2, '.', ''),
+                    'tipo_contrato' => $contrato->rrhhtipocontrato->nombre ?? 'N/A',
+                    'valor_dia' => '0',
+                    'dias_procesables' => '0',
+                    'salario_mes' => 0,
+                    'total_ctrlasistencias' => 0,
+                    'cant_inasistencias' => 0,
+                    'total_marcaciones_incompletas' => 0,
+                    'cant_marcaciones_incompletas' => 0,
+                    'total_permisos' => 0,
+                    'total_adelantos' => 0,
+                    'total_bonos' => 0,
+                    'ids_bonos' => [],
+                    'total_descuentos' => 0,
+                    'liquido_pagable' => 0,
+                    'detalle_pago' => '0',
+                    'calendario_laboral' => $dias_tipo,
+                    'tipo_designacion' => '',
+                    'bonos' => [],
+                    'descuentos' => [],
+                    'adelantos' => [],
+                ];
         })->toArray();
     }
 
@@ -179,20 +186,26 @@ class ProcesarSueldo extends Component
         foreach ($this->contratosSeleccionados as $contrato_id) {
 
             $contrato = Rrhhcontrato::find($contrato_id);
-
-            if ($contrato->fecha_inicio > $fechaInicioMes) {
-                $fechaInicioMes = $contrato->fecha_inicio;
-            }
-
-
+            $tipo_desingacion = "";
             $liquido_pagable = $contrato->salario_basico;
 
             $valor_dia_laboral = number_format(($contrato->salario_basico / 30), 2);
-
+            if ($contrato->fecha_inicio > $fechaInicioMes) {
+                $fechaA = new DateTime($fechaInicioMes);
+                $fechaB = new DateTime($contrato->fecha_inicio);
+                $diferencia = $fechaA->diff($fechaB);
+                $liquido_pagable -= ($diferencia->days * $valor_dia_laboral);
+                $fechaInicioMes = $contrato->fecha_inicio;
+            }
+            // dd($liquido_pagable);
             $cant_permisos = 0;
-            $total_ctrlasistencias = 0;
-            $total_permisos = 0;
+
             $cant_faltas_completas = 0;
+            $cant_marcaciones_incompletas = 0;
+
+            $total_inasistencias_completas = 0;
+            $total_marcaciones_incompletas = 0;
+
             $designaciones = Designacione::where('empleado_id', $contrato->empleado->id)
                 ->where('tipo', 'NORMAL')
                 ->where(function ($q) use ($fechaInicioMes, $fechaFinMes) {
@@ -214,51 +227,90 @@ class ProcesarSueldo extends Component
                 $asistencia = Asistencia::whereIn('designacione_id', $ids_designaciones)
                     ->whereDate('fecha', $fecha->format('Y-m-d'))
                     ->first();
-                if (!$asistencia) {
-                    // dd('asistencia no encontrada para el día '.$fecha->format('Y-m-d').' y contrato '.$contrato->id);
-                    foreach ($dias_feriados as $dia_feriado) {
-                        if ($fecha->format('Y-m-d') === $dia_feriado) {
-                            // Es feriado, no se descuenta
-                            continue 2; // Saltar al siguiente día del periodo
-                        } else {
-                            // si no es feriado, verificar si es día laborable según designación
-                            // Dia de la semana (0=domingo, 1=lunes, ..., 6=sabado)
-                            $dia_semana = $fecha->dayOfWeek;
-                            // Verificar si el día es laborable según la designación
-                            foreach ($designaciones as $desig) {
-                                $designaciondia = Designaciondia::where('designacione_id', $desig->id)
-                                    ->first();
-                                $dias_php = [
-                                    0 => 'domingo',
-                                    1 => 'lunes',
-                                    2 => 'martes',
-                                    3 => 'miercoles',
-                                    4 => 'jueves',
-                                    5 => 'viernes',
-                                    6 => 'sabado',
-                                ];
 
-                                if ($designaciondia && isset($dias_php[$dia_semana]) && $designaciondia->{$dias_php[$dia_semana]} == false) {
-                                    // No es día laborable, no se descuenta
-                                    continue 3; // Saltar al siguiente día del periodo
-                                } else {
-                                    $permiso = Rrhhpermiso::where('empleado_id', $contrato->empleado->id)
-                                        ->where('activo', true)
-                                        ->where('status', 'APROBADO')
-                                        ->where(function ($query) use ($fecha) {
-                                            $query->whereDate('fecha_inicio', '<=', $fecha->format('Y-m-d'))
-                                                ->whereDate('fecha_fin', '>=', $fecha->format('Y-m-d'));
-                                        })
-                                        ->first();
-                                    if ($permiso) {
-                                        // Hay un permiso aprobado para este día, no se descuenta
-                                        continue 3; // Saltar al siguiente día del periodo
-                                    } else {
-                                        // No se encontraron razones para NO DESCONTAR, se procede a descontar como falta completa
-                                        $liquido_pagable -= $parametros->falta_dia_completo; // Descuento fijo por falta completa
-                                        $total_ctrlasistencias += $parametros->falta_dia_completo; // Para mostrar en el detalle
-                                        $cant_faltas_completas++;
-                                    }
+                if (!$asistencia) {
+                    // dd('no hay marcacion ' . $fecha, $asistencia);
+                    $esFeriado = false;
+
+                    // BUSCAR SI ES FERIADO
+                    foreach ($dias_feriados as $dia_feriado) {
+                        // dd('Buscando si ' . $fecha . ' es feriado');
+                        if ($fecha->format('Y-m-d') === $dia_feriado) {
+                            // dd('Es feriado');
+                            // Es feriado, no se descuenta
+                            $esFeriado = true; // Saltar al siguiente día del periodo
+                        }
+                    }
+
+
+                    if ($esFeriado == false) {
+                        // dd('No es feriado, buscando si ' . $fecha . ' es dia laborable segun designacion');
+                        // si no es feriado, verificar si es día laborable según designación
+                        // Dia de la semana (0=domingo, 1=lunes, ..., 6=sabado)
+                        $dia_semana = $fecha->dayOfWeek;
+                        // Verificar si el día es laborable según la designación
+                        $esLaborable = true;
+
+                        $fechaC = Carbon::parse($fecha);
+
+                        $designacionesEnFecha = $designaciones->filter(function ($d) use ($fecha) {
+                            return $fecha->between(
+                                Carbon::parse($d->fechaInicio),
+                                Carbon::parse($d->fechaFin)
+                            );
+                        })->first();
+
+
+                        if ($designacionesEnFecha && $designacionesEnFecha->tipo_designacion != 'ADMIN') {
+                            $designaciondia = $designacionesEnFecha->designaciondias->select('domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado')->first()->toArray();
+                            $tipo_desingacion = $designacionesEnFecha->tipo_designacion;
+                        } else {
+
+                            // CASO GENERICO SE CREA UN ARRAY
+                            $designaciondia = [
+                                'domingo' => 0,
+                                'lunes' => 1,
+                                'martes' => 1,
+                                'miercoles' => 1,
+                                'jueves' => 1,
+                                'viernes' => 1,
+                                'sabado' => 0
+                            ];
+                        }
+
+
+
+                        $dias_php = [
+                            0 => 'domingo',
+                            1 => 'lunes',
+                            2 => 'martes',
+                            3 => 'miercoles',
+                            4 => 'jueves',
+                            5 => 'viernes',
+                            6 => 'sabado',
+                        ];
+
+                        if ($designaciondia && isset($dias_php[$dia_semana]) && $designaciondia[$dias_php[$dia_semana]] == 0) {
+                            // No es día laborable, no se descuenta
+                            $esLaborable = false;
+                        }
+
+
+                        if ($esLaborable == true) {
+                            $permiso = Rrhhpermiso::where('empleado_id', $contrato->empleado_id)
+                                ->where('activo', true)
+                                ->where('status', 'APROBADO')
+                                ->where(function ($query) use ($fecha) {
+                                    $query->whereDate('fecha_inicio', '<=', $fecha->format('Y-m-d'))
+                                        ->whereDate('fecha_fin', '>=', $fecha->format('Y-m-d'));
+                                })
+                                ->first();
+
+                            if (!$permiso) {
+                                // No se encontraron razones para NO DESCONTAR, se procede a descontar como falta completa
+                                if ($designacionesEnFecha && $designacionesEnFecha->tipo_designacion != 'ADMIN') {
+                                    $total_inasistencias_completas += $parametros->falta_dia_completo; // Para mostrar en el detalle
+                                    $cant_faltas_completas++;
                                 }
                             }
                         }
@@ -267,30 +319,30 @@ class ProcesarSueldo extends Component
 
                     if ($asistencia->estado == 0) {
                         //   Existe ingreso y no salida - se aplicará las multas correspondientes
-                        $liquido_pagable -= $parametros->asistencia_sin_salida; // Descuento fijo por asistencia sin salida
-                        $total_ctrlasistencias += $parametros->asistencia_sin_salida; // Para mostrar en el detalle
+                        $total_marcaciones_incompletas += $parametros->asistencia_sin_salida; // Para mostrar en el detalle
+                        $cant_marcaciones_incompletas++;
                     }
                 }
             }
 
             // FIN ASISTENCIAS
             // PERMISOS
-            $permisos = Rrhhpermiso::where('rrhhcontrato_id', $contrato->id)
-                ->where('activo', true)
-                ->where('status', 'APROBADO')
-                ->where(function ($q) use ($fechaInicioMes, $fechaFinMes) {
-                    $q->whereBetween('fecha_inicio', [$fechaInicioMes, $fechaFinMes])
-                        ->orWhereBetween('fecha_fin', [$fechaInicioMes, $fechaFinMes])
-                        ->orWhere(function ($q2) use ($fechaInicioMes, $fechaFinMes) {
-                            $q2->where('fecha_inicio', '<=', $fechaInicioMes)
-                                ->where('fecha_fin', '>=', $fechaFinMes);
-                        });
-                })
-                ->get();
-            foreach ($permisos as $permiso) {
-                // contar los dias de permiso basado en la fecha de inicio y la fecha de fin
-                $cant_permisos = Carbon::parse($permiso->fecha_inicio)->diffInDays(Carbon::parse($permiso->fecha_fin)) + 1;
-            }
+            // $permisos = Rrhhpermiso::where('rrhhcontrato_id', $contrato->id)
+            //     ->where('activo', true)
+            //     ->where('status', 'APROBADO')
+            //     ->where(function ($q) use ($fechaInicioMes, $fechaFinMes) {
+            //         $q->whereBetween('fecha_inicio', [$fechaInicioMes, $fechaFinMes])
+            //             ->orWhereBetween('fecha_fin', [$fechaInicioMes, $fechaFinMes])
+            //             ->orWhere(function ($q2) use ($fechaInicioMes, $fechaFinMes) {
+            //                 $q2->where('fecha_inicio', '<=', $fechaInicioMes)
+            //                     ->where('fecha_fin', '>=', $fechaFinMes);
+            //             });
+            //     })
+            //     ->get();
+            // foreach ($permisos as $permiso) {
+            //     // contar los dias de permiso basado en la fecha de inicio y la fecha de fin
+            //     $cant_permisos = Carbon::parse($permiso->fecha_inicio)->diffInDays(Carbon::parse($permiso->fecha_fin)) + 1;
+            // }
             // FIN PERMISOS
 
             // BONOS
@@ -305,7 +357,7 @@ class ProcesarSueldo extends Component
             $ids_bonos = [];
             foreach ($bonos as $bono) {
                 $total_bonos += $bono->monto ?? 0;
-                $liquido_pagable += $bono->monto ?? 0; // Sumar el bono al líquido pagable
+                // $liquido_pagable += $bono->monto ?? 0; // Sumar el bono al líquido pagable
                 $ids_bonos[] = $bono->id;
             }
             $total_bonos = round($total_bonos, 2);
@@ -321,7 +373,7 @@ class ProcesarSueldo extends Component
             $total_descuentos = 0;
             foreach ($descuentos as $descuento) {
                 $total_descuentos += $descuento->monto ?? 0;
-                $liquido_pagable -= $descuento->monto ?? 0; // Restar el descuento al líquido pagable
+                // $liquido_pagable -= $descuento->monto ?? 0; // Restar el descuento al líquido pagable
             }
             $total_descuentos = round($total_descuentos, 2);
             // FIN DESCUENTOS
@@ -336,9 +388,14 @@ class ProcesarSueldo extends Component
                 ->get();
             foreach ($adelantos as $adelanto) {
                 $total_adelantos += $adelanto->monto ?? 0;
-                $liquido_pagable -= $adelanto->monto ?? 0; // Restar el adelanto al líquido pagable
+                // $liquido_pagable -= $adelanto->monto ?? 0; // Restar el adelanto al líquido pagable
             }
             // FIN ADELANTOS
+
+
+            // AJUSTE LIQUIDO PAGABLE
+            $liquido_ajustado = $liquido_pagable - $total_inasistencias_completas - $total_marcaciones_incompletas - $total_descuentos - $total_adelantos + $total_bonos;
+            // FIN AJUSTE
 
             $contratos[] = [
                 'id' => $contrato->id,
@@ -351,16 +408,23 @@ class ProcesarSueldo extends Component
                 'tipo_contrato' => $contrato->rrhhtipocontrato->nombre ?? 'N/A',
                 'valor_dia' => '0',
                 'dias_procesables' => '0',
-                'salario_mes' => number_format($contrato->salario_basico, 2, '.', ''),
-                'total_ctrlasistencias' => $total_ctrlasistencias,
+                'salario_mes' => number_format($liquido_pagable, 2, '.', ''),
+                'total_ctrlasistencias' => $total_inasistencias_completas,
+                'cant_inasistencias' => $cant_faltas_completas,
+                'total_marcaciones_incompletas' => $total_marcaciones_incompletas,
+                'cant_marcaciones_incompletas' => $cant_marcaciones_incompletas,
                 'total_permisos' => $cant_permisos,
                 'total_adelantos' => $total_adelantos,
                 'total_bonos' => $total_bonos,
                 'ids_bonos' => $ids_bonos,
                 'total_descuentos' => $total_descuentos,
-                'liquido_pagable' => number_format($liquido_pagable, 2, '.', ''),
+                'liquido_pagable' => number_format($liquido_ajustado, 2, '.', ''),
                 'detalle_pago' => '0',
                 'calendario_laboral' => $calendario,
+                'tipo_designacion' => $tipo_desingacion,
+                'bonos' => $bonos,
+                'descuentos' => $descuentos,
+                'adelantos' => $adelantos,
             ];
         }
         $this->contratos = $contratos;
@@ -516,6 +580,8 @@ class ProcesarSueldo extends Component
                 'descuento' => $descuento ?? null,
             ];
         }
+        array_pop($calendario);
+
         return $calendario;
     }
     protected function generarCalendarioLaboral_ori($contrato, $anio, $mes)

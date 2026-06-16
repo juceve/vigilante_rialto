@@ -51,7 +51,7 @@
 
             </div>
         </div>
-        @dump($contratosSeleccionados)
+        {{-- @dump($contratosSeleccionados) --}}
         {{-- Tabla de contratos --}}
         <div class="card">
             <div class="card-header bg-primary text-white">
@@ -81,20 +81,21 @@
 
 
             </div>
-            <div class="card-body table-responsive" wire:ignore>
+            <div class="card-body table-responsive">
                 <table class="table table-bordered table-hover text-center table-sm mb-0" id="tablaContratos">
                     <thead class="table-secondary">
                         <tr>
                             @if (!$procesado)
-                                <th style="vertical-align: middle"><input type="checkbox" title="Seleccionar todos">
+                                <th style="vertical-align: middle"><input type="checkbox" title="Seleccionar todos"
+                                        wire:model="seleccionarTodos">
                                 </th>
                             @endif
                             <th style="vertical-align: middle">#</th>
                             <th style="vertical-align: middle">Empleado</th>
                             <th style="vertical-align: middle">Salario Base</th>
                             <th style="vertical-align: middle">Detalles</th>
-                            <th style="vertical-align: middle">Permisos</th>
                             <th style="vertical-align: middle">Inasistencias</th>
+                            <th style="vertical-align: middle">Sin Marcado Salida</th>
                             <th style="vertical-align: middle">Bonos</th>
                             <th style="vertical-align: middle">Descuentos</th>
                             <th style="vertical-align: middle">Adelantos</th>
@@ -109,7 +110,7 @@
                                     @if (!$procesado)
                                         <td style="vertical-align: middle">
                                             <input type="checkbox" value="{{ $contrato['id'] }}"
-                                                class="cb-contrato">
+                                                wire:model="contratosSeleccionados" class="cb-contrato">
                                         </td>
                                     @endif
                                     <td style="vertical-align: middle">{{ $index + 1 }}</td>
@@ -144,14 +145,7 @@
                                         @endif
                                     </td>
 
-                                    {{-- Permisos: días y ajuste --}}
-                                    <td style="vertical-align: middle">
-                                        <span
-                                            class="badge {{ $contrato['total_permisos'] > 0 ? 'badge-success' : 'badge-secondary' }}"
-                                            title="Ajuste por permisos">
-                                            {{ $contrato['total_permisos'] }}
-                                        </span>
-                                    </td>
+
                                     {{-- INASISTENCIAS: días y ajuste --}}
                                     <td style="vertical-align: middle">
                                         <span
@@ -159,9 +153,20 @@
                                             title="Ajuste por asistencias">
                                             {{ number_format($contrato['total_ctrlasistencias'], 2) }}
                                         </span>
+                                        {{-- <br>
+                                        <small>Cant.: {{$contrato['cant_inasistencias']}}</small> --}}
                                     </td>
 
-
+                                    {{-- Marcado sin salida --}}
+                                    <td style="vertical-align: middle">
+                                        <span
+                                            class="badge {{ $contrato['total_marcaciones_incompletas'] > 0 ? 'badge-danger' : 'badge-secondary' }}"
+                                            title="Ajuste por permisos">
+                                            {{ $contrato['total_marcaciones_incompletas'] }}
+                                        </span>
+                                        {{-- <br>
+                                        <small>Cant.: {{$contrato['cant_marcaciones_incompletas']}}</small> --}}
+                                    </td>
                                     {{-- Bonos --}}
                                     <td style="vertical-align: middle">
 
@@ -238,7 +243,7 @@
     @if ($contratoSeleccionado)
         <div class="modal fade" id="modalDetalles" data-backdrop="static" data-keyboard="false" tabindex="-1"
             aria-labelledby="modalDetallesLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header bg-info text-white">
                         Detalles para: <strong>{{ $contratoSeleccionado['nombres'] }}
@@ -248,25 +253,174 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        @if ($contratoSeleccionado)
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="accordion" id="accordionExample">
+                                    <div class="card">
+                                        <div class="card-header" id="headingOne">
+                                            <h2 class="mb-0">
+                                                <button class="btn btn-link btn-block text-left" type="button"
+                                                    data-toggle="collapse" data-target="#collapseOne"
+                                                    aria-expanded="false" aria-controls="collapseOne">
+                                                    BONOS
+                                                </button>
+                                            </h2>
+                                        </div>
 
-                            <table class="table table-sm" style="font-size: 0.9rem;">
+                                        <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
+                                            data-parent="#accordionExample">
+                                            <div class="card-body">
+                                                <table class="table table-sm table-striped">
+                                                    <thead>
+                                                        <tr class="table-success">
+                                                            <th>Fecha</th>
+                                                            <th>Tipo</th>
+                                                            <th class="text-right">Monto</th>
 
-                                <thead>
-                                    <tr class="bg-primary text-white text-center">
-                                        <th>Fecha</th>
-                                        <th>Tipo de Día</th>
-                                        <th>Estado de Asistencia</th>
-                                        <th class="text-right">Descuento</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php
-                                        $total_descuentos = 0;
-                                    @endphp
-                                    @foreach ($contratoSeleccionado['calendario_laboral'] as $dia)
-                                        <tr
-                                            class="text-center
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse ($contratoSeleccionado['bonos'] as $bono)
+                                                            <tr>
+                                                                <td>{{ $bono['fecha'] }}</td>
+                                                                @php
+                                                                    $tipobono = App\Models\Rrhhtipobono::find(
+                                                                        $bono['rrhhtipobono_id'],
+                                                                    );
+                                                                @endphp
+                                                                <td>{{ $tipobono->nombre }}</td>
+                                                                <td class="text-right">
+                                                                    {{ number_format($bono['cantidad'] * $bono['monto'], 2) }}
+                                                                </td>
+
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td class="text-center" colspan=3>No se encontraron resultados</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-header" id="headingTwo">
+                                            <h2 class="mb-0">
+                                                <button class="btn btn-link btn-block text-left collapsed"
+                                                    type="button" data-toggle="collapse" data-target="#collapseTwo"
+                                                    aria-expanded="false" aria-controls="collapseTwo">
+                                                    DESCUENTOS / SANCIONES
+                                                </button>
+                                            </h2>
+                                        </div>
+                                        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo"
+                                            data-parent="#accordionExample">
+                                            <div class="card-body table-responsive">
+                                                <table class="table table-sm table-striped" style="max-height: 300px">
+                                                    <thead>
+                                                        <tr class="table-danger">
+                                                            <th>Fecha</th>
+                                                            <th>Tipo</th>
+                                                            <th class="text-right">Monto</th>
+
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse ($contratoSeleccionado['descuentos'] as $descuento)
+                                                            <tr>
+                                                                <td>{{ $descuento['fecha'] }}</td>
+                                                                @php
+                                                                    $tipodescuento = App\Models\Rrhhtipodescuento::find(
+                                                                        $descuento['rrhhtipodescuento_id'],
+                                                                    );
+                                                                @endphp
+                                                                <td>{{ $tipodescuento->nombre }}</td>
+                                                                <td class="text-right">
+                                                                    {{ number_format($descuento['cantidad'] * $descuento['monto'], 2) }}
+                                                                </td>
+
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td class="text-center" colspan=3>No se encontraron resultados</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-header" id="headingThree">
+                                            <h2 class="mb-0">
+                                                <button class="btn btn-link btn-block text-left collapsed"
+                                                    type="button" data-toggle="collapse"
+                                                    data-target="#collapseThree" aria-expanded="false"
+                                                    aria-controls="collapseThree">
+                                                    ADELANTOS
+                                                </button>
+                                            </h2>
+                                        </div>
+                                        <div id="collapseThree" class="collapse" aria-labelledby="headingThree"
+                                            data-parent="#accordionExample">
+                                            <div class="card-body">
+                                                <table class="table table-sm table-striped">
+                                                    <thead>
+                                                        <tr class="table-warning">
+                                                            <th>Fecha</th>
+                                                            <th>Motivo</th>
+                                                            <th class="text-right">Monto</th>
+
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse ($contratoSeleccionado['adelantos'] as $adelanto)
+                                                            <tr>
+                                                                <td>{{ $adelanto['fecha'] }}</td>
+
+                                                                <td>{{ $adelanto['motivo'] }}</td>
+                                                                <td class="text-right">
+                                                                    {{ number_format($adelanto['monto'], 2) }}</td>
+
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td class="text-center" colspan=3>No se encontraron resultados</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-secondary">CONTROL DE ASISTENCIA</strong>
+                                @if ($contratoSeleccionado)
+                                    @if ($contratoSeleccionado['tipo_designacion'] == '')
+                                        <div class="alert alert-info" role="alert">
+                                            TIPO DE DESIGNACION NO GENERA EVALUACIÓN.
+                                        </div>
+                                    @else
+                                        <table class="table table-sm" style="font-size: 0.9rem;">
+
+                                            <thead>
+                                                <tr class="bg-primary text-white text-center">
+                                                    <th>Fecha</th>
+                                                    <th>Tipo de Día</th>
+                                                    <th>Estado de Asistencia</th>
+                                                    <th class="text-right">Descuento</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php
+                                                    $total_descuentos = 0;
+                                                @endphp
+                                                @foreach ($contratoSeleccionado['calendario_laboral'] as $dia)
+                                                    <tr
+                                                        class="text-center
                                             @switch($dia['estado_asistencia'])
                                                 @case('completa')
                                                     table-success
@@ -284,45 +438,50 @@
                                             @endswitch
 
                                             ">
-                                            <td>{{ \Carbon\Carbon::parse($dia['fecha'])->format('d/m/Y') }}</td>
-                                            <td>
-                                                {{ $dia['tipo_dia'] }}
-                                            </td>
-                                            <td>
-                                                @switch($dia['estado_asistencia'])
-                                                    @case('completa')
-                                                        COMPLETA
-                                                    @break
+                                                        <td>{{ \Carbon\Carbon::parse($dia['fecha'])->format('d/m/Y') }}
+                                                        </td>
+                                                        <td>
+                                                            {{ $dia['tipo_dia'] }}
+                                                        </td>
+                                                        <td>
+                                                            @switch($dia['estado_asistencia'])
+                                                                @case('completa')
+                                                                    COMPLETA
+                                                                @break
 
-                                                    @case('media_jornada')
-                                                        MEDIA JORNADA
-                                                    @break
+                                                                @case('media_jornada')
+                                                                    NO MARCÓ SALIDA
+                                                                @break
 
-                                                    @default
-                                                        SIN MARCACIÓN
-                                                @endswitch
-                                            </td>
-                                            <td class="text-right">
-                                                {{ number_format($dia['descuento'], 2) }}
-                                                @php
-                                                    $total_descuentos += $dia['descuento'];
-                                                @endphp
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                                <tfoot>
-                                    <tr class="bg-primary text-white">
-                                        <th colspan="3" class="text-right">TOTAL</th>
-                                        <th class="text-right">{{ number_format($total_descuentos, 2) }}</th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        @endif
+                                                                @default
+                                                                    SIN MARCACIÓN
+                                                            @endswitch
+                                                        </td>
+                                                        <td class="text-right">
+                                                            {{ number_format($dia['descuento'], 2) }}
+                                                            @php
+                                                                $total_descuentos += $dia['descuento'];
+                                                            @endphp
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-primary text-white">
+                                                    <th colspan="3" class="text-right">TOTAL</th>
+                                                    <th class="text-right">{{ number_format($total_descuentos, 2) }}
+                                                    </th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary">Understood</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                     </div>
                 </div>
             </div>
@@ -353,42 +512,7 @@
         });
     </script>
 
-    <script>
-        document.addEventListener('livewire:load', function() {
 
-            let tabla = $('#tablaContratos').DataTable();
-
-            // Array global para mantener seleccionados
-            let seleccionados = [];
-
-            // Cuando haces click en checkbox
-            $(document).on('change', '.cb-contrato', function() {
-                let id = $(this).val();
-
-                if ($(this).is(':checked')) {
-                    if (!seleccionados.includes(id)) {
-                        seleccionados.push(id);
-                    }
-                } else {
-                    seleccionados = seleccionados.filter(item => item != id);
-                }
-
-                // Enviar a Livewire
-                Livewire.emit('setContratosSeleccionados', seleccionados);
-            });
-
-            // Cuando cambias de página/redibujas tabla
-            tabla.on('draw', function() {
-                $('.cb-contrato').each(function() {
-                    let id = $(this).val();
-                    if (seleccionados.includes(id)) {
-                        $(this).prop('checked', true);
-                    }
-                });
-            });
-
-        });
-    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
