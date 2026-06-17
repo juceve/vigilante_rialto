@@ -38,6 +38,7 @@ class Rrhhsueldoempleado extends Model
 		'total_bonos' => 'required',
 		'total_descuentos' => 'required',
 		'total_ctrlasistencias' => 'required',
+		'total_marcaciones_incompletas' => 'required',
 		'salario_mes' => 'required',
 		'liquido_pagable' => 'required',
     ];
@@ -49,7 +50,7 @@ class Rrhhsueldoempleado extends Model
      *
      * @var array
      */
-    protected $fillable = ['rrhhsueldo_id','empleado_id','rrhhcontrato_id','nombreempleado','total_permisos','total_adelantos','total_bonos', 'ids_bonos', 'total_descuentos','total_ctrlasistencias','salario_mes','liquido_pagable'];
+    protected $fillable = ['rrhhsueldo_id','empleado_id','rrhhcontrato_id','nombreempleado','total_permisos','total_adelantos','total_bonos', 'ids_bonos', 'total_descuentos','total_ctrlasistencias','total_marcaciones_incompletas','salario_mes','liquido_pagable'];
 
 
     /**

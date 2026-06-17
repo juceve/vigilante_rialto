@@ -83,7 +83,13 @@
             </div>
             <div class="card-body table-responsive">
                 <table class="table table-bordered table-hover text-center table-sm mb-0" id="tablaContratos">
-                    <thead class="table-secondary">
+                    <thead class="
+                    @if ($procesado)
+                        table-success
+                    @else
+                        table-secondary
+                    @endif
+                    ">
                         <tr>
                             @if (!$procesado)
                                 <th style="vertical-align: middle"><input type="checkbox" title="Seleccionar todos"
@@ -95,10 +101,10 @@
                             <th style="vertical-align: middle">Salario Base</th>
                             <th style="vertical-align: middle">Detalles</th>
                             <th style="vertical-align: middle">Inasistencias</th>
-                            <th style="vertical-align: middle">Sin Marcado Salida</th>
-                            <th style="vertical-align: middle">Bonos</th>
-                            <th style="vertical-align: middle">Descuentos</th>
+                            <th style="vertical-align: middle">No Marcó Salida</th>
+                            <th style="vertical-align: middle">Sanciones</th>
                             <th style="vertical-align: middle">Adelantos</th>
+                            <th style="vertical-align: middle">Bonos</th>
                             <th style="vertical-align: middle">Liquido Pagable</th>
                         </tr>
                     </thead>
@@ -150,7 +156,7 @@
                                     <td style="vertical-align: middle">
                                         <span
                                             class="badge {{ $contrato['total_ctrlasistencias'] == 0 ? 'badge-secondary' : 'badge-danger' }}"
-                                            title="Ajuste por asistencias">
+                                            title="Cant.: {{$contrato['cant_inasistencias']}} Inasistencias">
                                             {{ number_format($contrato['total_ctrlasistencias'], 2) }}
                                         </span>
                                         {{-- <br>
@@ -161,25 +167,19 @@
                                     <td style="vertical-align: middle">
                                         <span
                                             class="badge {{ $contrato['total_marcaciones_incompletas'] > 0 ? 'badge-danger' : 'badge-secondary' }}"
-                                            title="Ajuste por permisos">
-                                            {{ $contrato['total_marcaciones_incompletas'] }}
+                                            title="Cant.: {{$contrato['cant_marcaciones_incompletas']}} Asistencia sin Salida">
+                                            {{ number_format($contrato['total_marcaciones_incompletas'], 2) }}
                                         </span>
                                         {{-- <br>
                                         <small>Cant.: {{$contrato['cant_marcaciones_incompletas']}}</small> --}}
                                     </td>
-                                    {{-- Bonos --}}
-                                    <td style="vertical-align: middle">
 
-                                        <span
-                                            class="badge {{ $contrato['total_bonos'] > 0 ? 'badge-success' : 'badge-secondary' }}">
-                                            {{ number_format(abs($contrato['total_bonos']), 2) }}
-                                        </span>
-                                    </td>
                                     {{-- Descuentos --}}
                                     <td style="vertical-align: middle">
 
                                         <span
-                                            class="badge {{ $contrato['total_descuentos'] > 0 ? 'badge-danger' : 'badge-secondary' }}">
+                                            class="badge {{ $contrato['total_descuentos'] > 0 ? 'badge-danger' : 'badge-secondary' }}"
+                                            title="Descuentos por Sanciones">
                                             {{ number_format(abs($contrato['total_descuentos']), 2) }}
                                         </span>
                                     </td>
@@ -192,7 +192,15 @@
                                             {{ number_format($contrato['total_adelantos'] ?? 0, 2) }}
                                         </span>
                                     </td>
+                                    {{-- Bonos --}}
+                                    <td style="vertical-align: middle">
 
+                                        <span
+                                            class="badge {{ $contrato['total_bonos'] > 0 ? 'badge-success' : 'badge-secondary' }}"
+                                            title="Bonos sin pago efectuado">
+                                            {{ number_format(abs($contrato['total_bonos']), 2) }}
+                                        </span>
+                                    </td>
 
                                     {{-- Liquido Pagable --}}
                                     <td style="vertical-align: middle">
@@ -246,181 +254,256 @@
             <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header bg-info text-white">
-                        Detalles para: <strong>{{ $contratoSeleccionado['nombres'] }}
-                            {{ $contratoSeleccionado['apellidos'] }}</strong>
+                        DETALLES GENERALES
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="accordion" id="accordionExample">
-                                    <div class="card">
-                                        <div class="card-header" id="headingOne">
-                                            <h2 class="mb-0">
-                                                <button class="btn btn-link btn-block text-left" type="button"
-                                                    data-toggle="collapse" data-target="#collapseOne"
-                                                    aria-expanded="false" aria-controls="collapseOne">
-                                                    BONOS
-                                                </button>
-                                            </h2>
-                                        </div>
+                        <h5 class="text-secondary"><strong>CONTRATO NRO.:
+                                {{ str_pad($contratoSeleccionado['id'], 5, '0', STR_PAD_LEFT) }}</strong></h4>
+                            <div class="row text-secondary">
+                                <div class="col-6">
+                                    <label for="">EMPLEADO: </label> {{ $contratoSeleccionado['nombres'] }}
+                                    {{ $contratoSeleccionado['apellidos'] }}
+                                </div>
+                                <div class="col-3">
+                                    <label for="">Inicio: </label> {{ $contratoSeleccionado['fecha_inicio'] }}
+                                </div>
+                                <div class="col-3">
+                                    <label for="">Fin: </label>
+                                    {{ $contratoSeleccionado['fecha_fin'] ?? 'Indefinido' }}
+                                </div>
+                                <div class="col-6">
+                                    <label for="">Tipo Contrato: </label>
+                                    {{ $contratoSeleccionado['tipo_contrato'] ?? 'Indefinido' }}
+                                </div>
+                                <div class="col-3">
+                                    <label for="">Salario Base: </label>
+                                    {{ number_format($contratoSeleccionado['salario_basico'], 2) ?? 'Indefinido' }}
+                                </div>
+                            </div>
 
-                                        <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
-                                            data-parent="#accordionExample">
-                                            <div class="card-body">
-                                                <table class="table table-sm table-striped">
-                                                    <thead>
-                                                        <tr class="table-success">
-                                                            <th>Fecha</th>
-                                                            <th>Tipo</th>
-                                                            <th class="text-right">Monto</th>
+                            <hr>
 
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @forelse ($contratoSeleccionado['bonos'] as $bono)
-                                                            <tr>
-                                                                <td>{{ $bono['fecha'] }}</td>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="accordion" id="accordionExample">
+                                        <div class="card">
+                                            <div class="card-header" id="headingOne">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link btn-block text-left text-secondary"
+                                                        type="button" data-toggle="collapse"
+                                                        data-target="#collapseOne" aria-expanded="false"
+                                                        aria-controls="collapseOne">
+                                                        <strong>BONOS</strong>
+                                                    </button>
+                                                </h2>
+                                            </div>
+
+                                            <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
+                                                data-parent="#accordionExample">
+                                                <div class="card-body">
+                                                    <table class="table table-sm table-striped">
+                                                        <thead>
+                                                            <tr class="table-success">
+                                                                <th>Fecha</th>
+                                                                <th>Tipo</th>
+                                                                <th class="text-right">Monto</th>
+
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @php
+                                                                $total_bonos = 0;
+                                                            @endphp
+                                                            @forelse ($contratoSeleccionado['bonos'] as $bono)
+                                                                <tr>
+                                                                    <td>{{ $bono['fecha'] }}</td>
+                                                                    @php
+                                                                        $tipobono = App\Models\Rrhhtipobono::find(
+                                                                            $bono['rrhhtipobono_id'],
+                                                                        );
+                                                                    @endphp
+                                                                    <td>{{ $tipobono->nombre }}</td>
+                                                                    <td class="text-right">
+                                                                        {{ number_format($bono['cantidad'] * $bono['monto'], 2) }}
+                                                                    </td>
+
+                                                                </tr>
                                                                 @php
-                                                                    $tipobono = App\Models\Rrhhtipobono::find(
-                                                                        $bono['rrhhtipobono_id'],
-                                                                    );
+                                                                    $total_bonos += $bono['cantidad'] * $bono['monto'];
                                                                 @endphp
-                                                                <td>{{ $tipobono->nombre }}</td>
+                                                            @empty
+                                                                <tr>
+                                                                    <td class="text-center" colspan=3>No se encontraron
+                                                                        resultados</td>
+                                                                </tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr class="table-secondary">
+                                                                <td colspan="2" class="text-right">TOTAL</td>
                                                                 <td class="text-right">
-                                                                    {{ number_format($bono['cantidad'] * $bono['monto'], 2) }}
+                                                                    {{ number_format($total_bonos, 2) }}
                                                                 </td>
-
                                                             </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td class="text-center" colspan=3>No se encontraron resultados</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    </tbody>
-                                                </table>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="card">
-                                        <div class="card-header" id="headingTwo">
-                                            <h2 class="mb-0">
-                                                <button class="btn btn-link btn-block text-left collapsed"
-                                                    type="button" data-toggle="collapse" data-target="#collapseTwo"
-                                                    aria-expanded="false" aria-controls="collapseTwo">
-                                                    DESCUENTOS / SANCIONES
-                                                </button>
-                                            </h2>
-                                        </div>
-                                        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo"
-                                            data-parent="#accordionExample">
-                                            <div class="card-body table-responsive">
-                                                <table class="table table-sm table-striped" style="max-height: 300px">
-                                                    <thead>
-                                                        <tr class="table-danger">
-                                                            <th>Fecha</th>
-                                                            <th>Tipo</th>
-                                                            <th class="text-right">Monto</th>
+                                        <div class="card">
+                                            <div class="card-header" id="headingTwo">
+                                                <h2 class="mb-0">
+                                                    <button
+                                                        class="btn btn-link btn-block text-left text-secondary collapsed"
+                                                        type="button" data-toggle="collapse"
+                                                        data-target="#collapseTwo" aria-expanded="false"
+                                                        aria-controls="collapseTwo">
+                                                        <strong>DESCUENTOS / SANCIONES</strong>
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo"
+                                                data-parent="#accordionExample">
+                                                <div class="card-body table-responsive">
+                                                    <table class="table table-sm table-striped">
+                                                        <thead>
+                                                            <tr class="table-danger">
+                                                                <th>Fecha</th>
+                                                                <th>Tipo</th>
+                                                                <th class="text-right">Monto</th>
 
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @forelse ($contratoSeleccionado['descuentos'] as $descuento)
-                                                            <tr>
-                                                                <td>{{ $descuento['fecha'] }}</td>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @php
+                                                                $total_descuentos = 0;
+                                                            @endphp
+                                                            @forelse ($contratoSeleccionado['descuentos'] as $descuento)
+                                                                <tr>
+                                                                    <td>{{ $descuento['fecha'] }}</td>
+                                                                    @php
+                                                                        $tipodescuento = App\Models\Rrhhtipodescuento::find(
+                                                                            $descuento['rrhhtipodescuento_id'],
+                                                                        );
+                                                                    @endphp
+                                                                    <td>{{ $tipodescuento->nombre }}</td>
+                                                                    <td class="text-right">
+                                                                        {{ number_format($descuento['cantidad'] * $descuento['monto'], 2) }}
+                                                                    </td>
+
+                                                                </tr>
                                                                 @php
-                                                                    $tipodescuento = App\Models\Rrhhtipodescuento::find(
-                                                                        $descuento['rrhhtipodescuento_id'],
-                                                                    );
+                                                                    $total_descuentos +=
+                                                                        $descuento['cantidad'] * $descuento['monto'];
                                                                 @endphp
-                                                                <td>{{ $tipodescuento->nombre }}</td>
+                                                            @empty
+                                                                <tr>
+                                                                    <td class="text-center" colspan=3>No se encontraron
+                                                                        resultados</td>
+                                                                </tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr class="table-secondary">
+                                                                <td colspan="2" class="text-right">TOTAL</td>
                                                                 <td class="text-right">
-                                                                    {{ number_format($descuento['cantidad'] * $descuento['monto'], 2) }}
+                                                                    {{ number_format($total_descuentos, 2) }}
                                                                 </td>
-
                                                             </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td class="text-center" colspan=3>No se encontraron resultados</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    </tbody>
-                                                </table>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="card">
-                                        <div class="card-header" id="headingThree">
-                                            <h2 class="mb-0">
-                                                <button class="btn btn-link btn-block text-left collapsed"
-                                                    type="button" data-toggle="collapse"
-                                                    data-target="#collapseThree" aria-expanded="false"
-                                                    aria-controls="collapseThree">
-                                                    ADELANTOS
-                                                </button>
-                                            </h2>
-                                        </div>
-                                        <div id="collapseThree" class="collapse" aria-labelledby="headingThree"
-                                            data-parent="#accordionExample">
-                                            <div class="card-body">
-                                                <table class="table table-sm table-striped">
-                                                    <thead>
-                                                        <tr class="table-warning">
-                                                            <th>Fecha</th>
-                                                            <th>Motivo</th>
-                                                            <th class="text-right">Monto</th>
+                                        <div class="card">
+                                            <div class="card-header" id="headingThree">
+                                                <h2 class="mb-0">
+                                                    <button
+                                                        class="btn btn-link btn-block text-left text-secondary collapsed"
+                                                        type="button" data-toggle="collapse"
+                                                        data-target="#collapseThree" aria-expanded="false"
+                                                        aria-controls="collapseThree">
+                                                        <strong>ADELANTOS</strong>
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapseThree" class="collapse" aria-labelledby="headingThree"
+                                                data-parent="#accordionExample">
+                                                <div class="card-body">
+                                                    <table class="table table-sm table-striped">
+                                                        <thead>
+                                                            <tr class="table-warning">
+                                                                <th>Fecha</th>
+                                                                <th>Motivo</th>
+                                                                <th class="text-right">Monto</th>
 
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @forelse ($contratoSeleccionado['adelantos'] as $adelanto)
-                                                            <tr>
-                                                                <td>{{ $adelanto['fecha'] }}</td>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @php
+                                                                $total_adelantos = 0;
+                                                            @endphp
+                                                            @forelse ($contratoSeleccionado['adelantos'] as $adelanto)
+                                                                <tr>
+                                                                    <td>{{ $adelanto['fecha'] }}</td>
 
-                                                                <td>{{ $adelanto['motivo'] }}</td>
+                                                                    <td>{{ $adelanto['motivo'] }}</td>
+                                                                    <td class="text-right">
+                                                                        {{ number_format($adelanto['monto'], 2) }}</td>
+
+                                                                </tr>
+                                                                @php
+                                                                    $total_adelantos += $adelanto['monto'];
+                                                                @endphp
+                                                            @empty
+                                                                <tr>
+                                                                    <td class="text-center" colspan=3>No se encontraron
+                                                                        resultados</td>
+                                                                </tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr class="table-secondary">
+                                                                <td colspan="2" class="text-right">TOTAL</td>
                                                                 <td class="text-right">
-                                                                    {{ number_format($adelanto['monto'], 2) }}</td>
-
+                                                                    {{ number_format($total_adelantos, 2) }}
+                                                                </td>
                                                             </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td class="text-center" colspan=3>No se encontraron resultados</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    </tbody>
-                                                </table>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <strong class="text-secondary">CONTROL DE ASISTENCIA</strong>
-                                @if ($contratoSeleccionado)
-                                    @if ($contratoSeleccionado['tipo_designacion'] == '')
-                                        <div class="alert alert-info" role="alert">
-                                            TIPO DE DESIGNACION NO GENERA EVALUACIÓN.
-                                        </div>
-                                    @else
-                                        <table class="table table-sm" style="font-size: 0.9rem;">
+                                <div class="col-6">
+                                    <strong class="text-secondary">CONTROL DE ASISTENCIA</strong>
+                                    @if ($contratoSeleccionado)
+                                        @if ($contratoSeleccionado['tipo_designacion'] == '')
+                                            <div class="bg-success disabled color-palette p-2">
+                                                <strong>EL TIPO DE DESIGNACION NO GENERA EVALUACIÓN.</strong>
+                                            </div>
+                                        @else
+                                            <table class="table table-sm" style="font-size: 0.9rem;">
 
-                                            <thead>
-                                                <tr class="bg-primary text-white text-center">
-                                                    <th>Fecha</th>
-                                                    <th>Tipo de Día</th>
-                                                    <th>Estado de Asistencia</th>
-                                                    <th class="text-right">Descuento</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @php
-                                                    $total_descuentos = 0;
-                                                @endphp
-                                                @foreach ($contratoSeleccionado['calendario_laboral'] as $dia)
-                                                    <tr
-                                                        class="text-center
+                                                <thead>
+                                                    <tr class="bg-primary text-white text-center">
+                                                        <th>Fecha</th>
+                                                        <th>Tipo de Día</th>
+                                                        <th>Estado de Asistencia</th>
+                                                        <th class="text-right">Descuento</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @php
+                                                        $total_descuentos = 0;
+                                                    @endphp
+                                                    @foreach ($contratoSeleccionado['calendario_laboral'] as $dia)
+                                                        <tr
+                                                            class="text-center
                                             @switch($dia['estado_asistencia'])
                                                 @case('completa')
                                                     table-success
@@ -438,46 +521,47 @@
                                             @endswitch
 
                                             ">
-                                                        <td>{{ \Carbon\Carbon::parse($dia['fecha'])->format('d/m/Y') }}
-                                                        </td>
-                                                        <td>
-                                                            {{ $dia['tipo_dia'] }}
-                                                        </td>
-                                                        <td>
-                                                            @switch($dia['estado_asistencia'])
-                                                                @case('completa')
-                                                                    COMPLETA
-                                                                @break
+                                                            <td>{{ \Carbon\Carbon::parse($dia['fecha'])->format('d/m/Y') }}
+                                                            </td>
+                                                            <td>
+                                                                {{ $dia['tipo_dia'] }}
+                                                            </td>
+                                                            <td>
+                                                                @switch($dia['estado_asistencia'])
+                                                                    @case('completa')
+                                                                        COMPLETA
+                                                                    @break
 
-                                                                @case('media_jornada')
-                                                                    NO MARCÓ SALIDA
-                                                                @break
+                                                                    @case('media_jornada')
+                                                                        NO MARCÓ SALIDA
+                                                                    @break
 
-                                                                @default
-                                                                    SIN MARCACIÓN
-                                                            @endswitch
-                                                        </td>
-                                                        <td class="text-right">
-                                                            {{ number_format($dia['descuento'], 2) }}
-                                                            @php
-                                                                $total_descuentos += $dia['descuento'];
-                                                            @endphp
-                                                        </td>
+                                                                    @default
+                                                                        SIN MARCACIÓN
+                                                                @endswitch
+                                                            </td>
+                                                            <td class="text-right">
+                                                                {{ number_format($dia['descuento'], 2) }}
+                                                                @php
+                                                                    $total_descuentos += $dia['descuento'];
+                                                                @endphp
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr class="bg-primary text-white">
+                                                        <th colspan="3" class="text-right">TOTAL</th>
+                                                        <th class="text-right">
+                                                            {{ number_format($total_descuentos, 2) }}
+                                                        </th>
                                                     </tr>
-                                                @endforeach
-                                            </tbody>
-                                            <tfoot>
-                                                <tr class="bg-primary text-white">
-                                                    <th colspan="3" class="text-right">TOTAL</th>
-                                                    <th class="text-right">{{ number_format($total_descuentos, 2) }}
-                                                    </th>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
+                                                </tfoot>
+                                            </table>
+                                        @endif
                                     @endif
-                                @endif
+                                </div>
                             </div>
-                        </div>
 
                     </div>
                     <div class="modal-footer">

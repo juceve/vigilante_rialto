@@ -93,7 +93,7 @@
                     <span>Gestión: {{ $rrhhsueldo->gestion }}</span>
                     <span>Mes: {{ $rrhhsueldo->mes }}</span>
                 </div>
-                <div>Emitida: {{ \Carbon\Carbon::parse($rrhhsueldo->fecha)->format('d/m/Y') }}</div>
+                <div>Emitida: {{ \Carbon\Carbon::parse($rrhhsueldo->fecha)->format('d/m/Y') }} {{date('H:i:s')}}</div>
 
                 <div class="linea"></div>
                 <table>
@@ -112,31 +112,31 @@
 
                 <table class="tabla-totales">
                     <tr>
-                        <td>Salario Base Bs.:</td>
+                        <td>SALARIO BASE Bs.:</td>
                         <td>{{ number_format($b->salario_mes, 2) }}</td>
                     </tr>
                     <tr>
-                        <td>Permisos:</td>
-                        <td>{{ number_format($b->total_permisos, 2) }}</td>
+                        <td>Inasistencias:</td>
+                        <td>-{{ number_format($b->total_ctrlasistencias, 2) }}</td>
                     </tr>
-                    <tr>
-                        <td>Adelantos:</td>
-                        <td>{{ number_format($b->total_adelantos, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td>Bonos:</td>
-                        <td>{{ number_format($b->total_bonos, 2) }}</td>
+                     <tr>
+                        <td>No Marcó Salida:</td>
+                        <td>-{{ number_format($b->total_marcaciones_incompletas, 2) }}</td>
                     </tr>
                     <tr>
                         <td>Descuentos:</td>
-                        <td>{{ number_format($b->total_descuentos, 2) }}</td>
+                        <td>-{{ number_format($b->total_descuentos, 2) }}</td>
                     </tr>
                     <tr>
-                        <td>Inasistencias:</td>
-                        <td>{{ number_format($b->total_ctrlasistencias, 2) }}</td>
+                        <td>Adelantos:</td>
+                        <td>-{{ number_format($b->total_adelantos, 2) }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Líquido Pagable Bs.:</strong></td>
+                        <td>Bonos:</td>
+                        <td>+{{ number_format($b->total_bonos, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LÍQUIDO PAGABLE Bs.:</strong></td>
                         <td><strong>{{ number_format($b->liquido_pagable, 2) }} </strong></td>
                     </tr>
                 </table>

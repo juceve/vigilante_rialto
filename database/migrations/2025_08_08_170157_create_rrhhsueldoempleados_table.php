@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('ids_bonos')->nullable();
             $table->decimal('total_descuentos', 10, 2)->default(0);
             $table->decimal('total_ctrlasistencias', 10, 2)->default(0);
+            $table->decimal('total_marcaciones_incompletas', 10, 2)->default(0);
             $table->decimal('salario_mes', 10, 2)->default(0);
             $table->decimal('liquido_pagable', 10, 2)->default(0);
             $table->timestamps();

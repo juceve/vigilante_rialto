@@ -396,7 +396,9 @@ class ProcesarSueldo extends Component
             // AJUSTE LIQUIDO PAGABLE
             $liquido_ajustado = $liquido_pagable - $total_inasistencias_completas - $total_marcaciones_incompletas - $total_descuentos - $total_adelantos + $total_bonos;
             // FIN AJUSTE
-
+            if ($liquido_ajustado < 0) {
+                $liquido_ajustado = 0;
+            }
             $contratos[] = [
                 'id' => $contrato->id,
                 'empleado_id' => $contrato->empleado->id,
@@ -897,10 +899,11 @@ class ProcesarSueldo extends Component
     {
         DB::beginTransaction();
         try {
-            // dd($this->contratos);
+            // dd($this->rrhhsueldo->rrhhsueldoempleados);
+            $this->rrhhsueldo->rrhhsueldoempleados()->delete();
             foreach ($this->contratos as $contrato) {
 
-                $sueldoEmpleado = Rrhhsueldoempleado::updateOrCreate(
+                $sueldoEmpleado = Rrhhsueldoempleado::create(
                     [
                         'rrhhsueldo_id' => $this->rrhhsueldo->id,
                         'empleado_id' => $contrato['empleado_id'],
@@ -912,7 +915,8 @@ class ProcesarSueldo extends Component
                         'total_bonos' => $contrato['total_bonos'] ?? 0,
                         'total_descuentos' => $contrato['total_descuentos'] ?? 0,
                         'total_ctrlasistencias' => $contrato['total_ctrlasistencias'] ?? 0,
-                        'salario_mes' => $contrato['salario_basico'] ?? 0,
+                        'total_marcaciones_incompletas' => $contrato['total_marcaciones_incompletas'] ?? 0,
+                        'salario_mes' => $contrato['salario_mes'] ?? 0,
                         'liquido_pagable' => $contrato['liquido_pagable'] ?? 0,
                     ]
                 );
