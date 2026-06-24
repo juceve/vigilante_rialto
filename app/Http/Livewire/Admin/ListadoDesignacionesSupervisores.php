@@ -35,12 +35,21 @@ class ListadoDesignacionesSupervisores extends Component
         $supervisores = Empleado::whereHas('area', function ($query) {
             $query->where('template', 'SUPERVISOR');
         })
+
             ->whereHas('user', function ($query) {
                 $query->where('status', 1);
             })
             ->get();
         $clientes = Cliente::where('status', 1)->get();
-        $resultados = Designacionsupervisor::paginate($this->filas);
+        $resultados = Designacionsupervisor::whereHas('empleado', function ($query) {
+    $query->when($this->busqueda != '', function ($q) {
+        $q->where(function ($sub) {
+            $sub->where('nombres', 'LIKE', '%' . $this->busqueda . '%')
+                ->orWhere('apellidos', 'LIKE', '%' . $this->busqueda . '%');
+        });
+    });
+})
+->paginate($this->filas);
         $turnoguardias = Turnoguardia::all();
         return view('livewire.admin.listado-designaciones-supervisores', compact('resultados', 'supervisores', 'clientes', 'turnoguardias'))->extends('adminlte::page');
     }
@@ -314,8 +323,12 @@ class ListadoDesignacionesSupervisores extends Component
                 ->where('fechaInicio', $designacion->fechaInicio)
                 ->first();
             if ($designacionGral) {
+                $designacionGral->asistencias()->delete();
+                $designacionGral->designaciondias()->delete();
                 $designacionGral->delete();
             }
+            $designacion->inspecccions()->delete();
+            $designacion->designacionsupervisorclientes()->delete();
             $designacion->delete();
             $this->emit('success', 'Designación eliminada correctamente');
         } else {

@@ -4,6 +4,11 @@
 @endpush
 
 <div>
+    @if (!session('asistencia_operador'))
+        <script>
+            window.location.href = "{{ route('home') }}";
+        </script>
+    @endif
     @section('title')
         Ronda
     @endsection
@@ -673,6 +678,7 @@
 
             /* Animaciones */
             @keyframes pulse-patrol {
+
                 0%,
                 100% {
                     opacity: 1;

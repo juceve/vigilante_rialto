@@ -9,6 +9,7 @@ use App\Models\Rrhhdescuento;
 use App\Models\Rrhhtipodescuento;
 use App\Models\Sistemaparametro;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Session;
 use Livewire\Component;
 
 class MarcarIngreso extends Component
@@ -115,6 +116,7 @@ class MarcarIngreso extends Component
                 }
             }
         }
+
 
         return redirect()->route('home');
     }

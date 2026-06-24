@@ -2,7 +2,11 @@
     @section('title')
         Control de Flujos
     @endsection
-
+@if (!session('asistencia_operador'))
+        <script>
+            window.location.href = "{{ route('home') }}";
+        </script>
+    @endif
     <div class="row mb-1 ">
         <div class="col-1">
             <a href="javascript:history.back()" class="text-silver"><i class="fas fa-arrow-circle-left fa-2x"></i></a>

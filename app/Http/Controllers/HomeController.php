@@ -37,6 +37,8 @@ class HomeController extends Controller
         if (Auth::user()->status == 0) {
             Auth::logout(); // Cerramos sesión
             return redirect()->route('login')->with('error', 'Tu cuenta está inactiva. Contacta al administrador.');
+        }else{
+             Session::put('asistencia_operador', false);
         }
 
         if (!hayRevisionHoy()) {

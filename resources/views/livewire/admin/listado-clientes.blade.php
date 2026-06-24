@@ -23,7 +23,7 @@
         </div>
 
     </div>
-    <div class="table">
+    <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead class="thead">
                 <tr class="table-info">
@@ -37,7 +37,7 @@
             </thead>
             <tbody>
                 @foreach ($clientes as $cliente)
-                <tr 
+                <tr
                 @if (!tieneDesignacionesCliente($cliente->id))
                     class='table-danger' title="Cliente sin designaciones activas"
                 @endif

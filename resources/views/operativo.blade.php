@@ -66,7 +66,9 @@
         @else
             @if ($estadoMarcado > 0)
                 @if ($estadoMarcado == 1)
-
+                    @php
+                        Session::put('asistencia_operador', true);
+                    @endphp
                     {{-- Panel de Funciones Material Design --}}
                     <div class="functions-container">
                         <div class="container-fluid px-3">
@@ -252,7 +254,7 @@
 
     {{-- Estilos Material Design --}}
     @push('styles')
-       <link rel="stylesheet" href="{{asset('css/styleHomeVS.css')}}">
+        <link rel="stylesheet" href="{{ asset('css/styleHomeVS.css') }}">
     @endpush
 
     {{-- JavaScript Optimizado Material Design --}}

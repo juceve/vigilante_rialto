@@ -20,11 +20,14 @@ use DatePeriod;
 use DateTime;
 use Illuminate\Support\Facades\DB;
 use Carbon\CarbonPeriod;
+use Livewire\WithPagination;
 
 use function PHPUnit\Framework\isNull;
 
 class ProcesarSueldo extends Component
 {
+    use WithPagination;
+
     public $rrhhsueldo;
     public $contratos = [];
     public $feriados = [];
@@ -33,9 +36,37 @@ class ProcesarSueldo extends Component
     public $seleccionarTodos = false;
     public $contratoSeleccionado = null;
 
+    public $search = "";
+    protected $paginationTheme = 'bootstrap'; // opcional
+
     protected $listeners = ['guardarSueldos', 'setContratosSeleccionados'];
 
+    public function render()
+    {
+        $contratos = collect($this->contratos) // tu array
+            ->filter(function ($item) {
+                return str_contains(strtolower($item['nombres']), strtolower($this->search)) || str_contains(strtolower($item['apellidos']), strtolower($this->search));
+            });
+        $this->emit('dataTableRender');
 
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $contratos->forPage($this->page, 10),
+            $contratos->count(),
+            10
+        );
+
+        return view('livewire.admin.procesar-sueldo', [
+            'contratosP' => $paginated,
+            'gestion'   => $this->rrhhsueldo->gestion,
+            'mes'       => $this->rrhhsueldo->mes,
+            'feriados'  => $this->feriados,
+        ])->extends('adminlte::page');
+    }
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
 
     public function mount($rrhhsueldo_id)
     {
@@ -431,6 +462,8 @@ class ProcesarSueldo extends Component
         }
         $this->contratos = $contratos;
         $this->procesado = true;
+        $this->reset('search');
+        $this->resetPage();
     }
 
 
@@ -940,16 +973,5 @@ class ProcesarSueldo extends Component
             DB::rollBack();
             $this->emit('error', 'Error al registrar resultados: ' . $e->getMessage());
         }
-    }
-
-    public function render()
-    {
-        $this->emit('dataTableRender');
-        return view('livewire.admin.procesar-sueldo', [
-            'contratos' => $this->contratos,
-            'gestion'   => $this->rrhhsueldo->gestion,
-            'mes'       => $this->rrhhsueldo->mes,
-            'feriados'  => $this->feriados,
-        ])->extends('adminlte::page');
     }
 }

@@ -1,5 +1,10 @@
 {{-- filepath: c:\laragon\www\vigilantev2\resources\views\livewire\vigilancia\hombre-vivo.blade.php --}}
 <div>
+    @if (!session('asistencia_operador'))
+        <script>
+            window.location.href = "{{ route('home') }}";
+        </script>
+    @endif
     @section('title')
         Hombre Vivo
     @endsection

@@ -2,7 +2,21 @@
     @section('title', 'Procesar Sueldos')
 
     @section('content_header')
-        <h1 class="m-0 text-dark">Procesar Sueldos</h1>
+        <div class="container-fluid" style="display: flex; justify-content: space-between; align-items: center;">
+
+            <span id="card_title">
+                <h1 class="m-0 text-dark">Procesar Sueldos</h1>
+            </span>
+
+            <div class="float-right">
+                <a href="{{route('admin.sueldos')}}" class="btn btn-info  float-right"
+                    data-placement="left">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+
     @endsection
 
 
@@ -82,13 +96,20 @@
 
             </div>
             <div class="card-body table-responsive">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon1"><i class="fas fa-search"></i></span>
+                    </div>
+                    <input type="search" class="form-control" placeholder="Buscar por Empleado"
+                        wire:model.debounce.800ms="search">
+                </div>
+
                 <table class="table table-bordered table-hover text-center table-sm mb-0" id="tablaContratos">
-                    <thead class="
-                    @if ($procesado)
-                        table-success
+                    <thead
+                        class="
+                    @if ($procesado) table-success
                     @else
-                        table-secondary
-                    @endif
+                        table-secondary @endif
                     ">
                         <tr>
                             @if (!$procesado)
@@ -110,7 +131,7 @@
                     </thead>
                     <tbody>
 
-                        @forelse($contratos as $index => $contrato)
+                        @forelse($contratosP as $index => $contrato)
                             @if ($contrato != null)
                                 <tr>
                                     @if (!$procesado)
@@ -156,7 +177,7 @@
                                     <td style="vertical-align: middle">
                                         <span
                                             class="badge {{ $contrato['total_ctrlasistencias'] == 0 ? 'badge-secondary' : 'badge-danger' }}"
-                                            title="Cant.: {{$contrato['cant_inasistencias']}} Inasistencias">
+                                            title="Cant.: {{ $contrato['cant_inasistencias'] }} Inasistencias">
                                             {{ number_format($contrato['total_ctrlasistencias'], 2) }}
                                         </span>
                                         {{-- <br>
@@ -167,7 +188,7 @@
                                     <td style="vertical-align: middle">
                                         <span
                                             class="badge {{ $contrato['total_marcaciones_incompletas'] > 0 ? 'badge-danger' : 'badge-secondary' }}"
-                                            title="Cant.: {{$contrato['cant_marcaciones_incompletas']}} Asistencia sin Salida">
+                                            title="Cant.: {{ $contrato['cant_marcaciones_incompletas'] }} Asistencia sin Salida">
                                             {{ number_format($contrato['total_marcaciones_incompletas'], 2) }}
                                         </span>
                                         {{-- <br>
@@ -228,7 +249,7 @@
                         @endforelse
                     </tbody>
                 </table>
-
+                <div class="float-right mt-2">{{ $contratosP->links() }}</div>
             </div>
 
 
@@ -587,6 +608,18 @@
 
 
 </div>
+@section('css')
+    <style>
+        .btn-back {
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            z-index: 1050;
+        }
+    </style>
+@endsection
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 

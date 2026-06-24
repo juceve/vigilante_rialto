@@ -5,6 +5,7 @@ namespace App\Http\Livewire;
 use App\Models\Asistencia;
 use App\Models\Designacione;
 use DateTime;
+use Illuminate\Support\Facades\Session;
 use Livewire\Component;
 
 class MarcarSalida extends Component
@@ -54,6 +55,7 @@ class MarcarSalida extends Component
                 'lngsalida' => $this->lng,
                 'estado' => true,
             ]);
+            Session::put('asistencia_operador', false);
             return redirect()->route('home')->with('success', 'Salida registrada correctamente');
         } else {
             $this->emit('error', 'Error: No tiene un marcado de ingreso previo');

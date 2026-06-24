@@ -47,13 +47,14 @@
                 <table class="table table-striped table-hover">
                     <thead class="thead table-info">
                         <tr>
-                            <th>No</th>
+                            <th>ID</th>
 
                             <th>Empleado</th>
-                            <th>Fecha Inicio</th>
+                            <th>Inicio de Funciones</th>
 
 
                             <th>Estado</th>
+                            <th>Creado</th>
                             {{-- <th>Oficina</th> --}}
                             <th></th>
                         </tr>
@@ -64,7 +65,7 @@
                         @endphp
                         @foreach ($resultados as $item)
                             <tr>
-                                <td>{{ ++$i }}</td>
+                                <td>{{ str_pad($item->id,3,"0",STR_PAD_LEFT) }}</td>
 
                                 <td>{{ $item->empleado->nombres . ' ' . $item->empleado->apellidos }}</td>
                                 <td>{{ $item->fechaInicio }}</td>
@@ -77,6 +78,7 @@
 
 
                                 </td>
+                                <td>{{ $item->created_at }}</td>
                                 <td align="right">
                                     <button class="btn btn-sm btn-warning" title="Editar"
                                         wire:click="editar({{ $item->id }})"><i class="fas fa-edit"></i></button>

@@ -415,8 +415,10 @@
                     </div>
                 </div>
             </a>
+
             @livewire('vigilancia.ronda-en-progreso')
             @livewire('vigilancia.alerta-hv')
+
             @auth
                 <button class="navbar-toggler material-toggler" type="button" data-bs-toggle="collapse"
                     data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false"
@@ -437,12 +439,12 @@
                             </a>
                         </li>
                         {{-- @if (session('cliente_id-oper')) --}}
-                            <li class="nav-item">
-                                <a class="nav-link material-nav-link" href="{{ route('vigilancia.profile') }}">
-                                    <i class="fas fa-user me-2"></i>
-                                    <span>Mi Perfil</span>
-                                </a>
-                            </li>
+                        <li class="nav-item">
+                            <a class="nav-link material-nav-link" href="{{ route('vigilancia.profile') }}">
+                                <i class="fas fa-user me-2"></i>
+                                <span>Mi Perfil</span>
+                            </a>
+                        </li>
                         {{-- @endif --}}
                         @if (session('designacion-super'))
                             @if (session('designacion-control') == 1)
@@ -473,6 +475,7 @@
 
     <!-- Main Content Container -->
     <main class="main-content">
+
         @yield('content')
     </main>
 

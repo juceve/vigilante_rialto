@@ -3,6 +3,11 @@
 @endpush
 
 <div>
+    @if (!session('asistencia_operador'))
+        <script>
+            window.location.href = "{{ route('home') }}";
+        </script>
+    @endif
     @section('title')
         Recorrido de la Ronda
     @endsection
