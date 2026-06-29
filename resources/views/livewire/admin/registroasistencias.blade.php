@@ -11,7 +11,7 @@
         <div class="card-header bg-primary text-white">
             <h3 class="card-title">Registro de Asistencias</h3>
         </div>
-        <div class="card-body table-responsive">
+        <div class="card-body">
             <div class="row">
                 <!-- Cliente -->
                 <div class="col-md-6">
@@ -81,193 +81,190 @@
                     </div>
                 </div>
             </div>
+            <div class="table-responsive">
 
-
-            <table class="table table-bordered table-hover text-center">
-                <thead class="table-info">
-                    <tr>
-                        <th class="text-left" style="width: 250px; vertical-align: middle;">EMPLEADO</th>
-                        @foreach ($dias as $dia)
-                            <th style="font-size: 12px; vertical-align: middle;">
-                                {{ strtoupper(str_replace('.', '', $dia->locale('es')->isoFormat('ddd DD MMM YY'))) }}
-                            </th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($designaciones as $desig)
+                <table class="table table-bordered table-hover text-center">
+                    <thead class="table-info">
                         <tr>
-                            <td class="text-left">
-                                <b>{{ $desig->empleado->nombres . ' ' . $desig->empleado->apellidos }}</b><br>
-                                <small class="text-success"><strong>Empresa:
-                                        {{ $desig->turno->cliente->nombre ?? 'Sin empresa' }}</strong></small> <br>
-                                @php
-                                    $dl = $desig->designaciondias;
-                                @endphp
-                                <small><span class="text-primary">Días Laborales:</span> [
-                                    {{ $dl->lunes ? 'Lu ' : '' }}
-                                    {{ $dl->martes ? 'Ma ' : '' }}
-                                    {{ $dl->miercoles ? 'Mi ' : '' }}
-                                    {{ $dl->jueves ? 'Ju ' : '' }}
-                                    {{ $dl->viernes ? 'Vi ' : '' }}
-                                    {{ $dl->sabado ? 'Sa ' : '' }}
-                                    {{ $dl->domingo ? 'Do ' : '' }}
-                                    ]
-                                </small> <br>
-                                <small class="text-info">Turno: {{ $desig->turno->nombre ?? '' }}</small>
-                                <small>[{{ $desig->turno->horainicio ?? '' }} -
-                                    {{ $desig->turno->horafin ?? '' }}]</small>
-
-
-
-
-                            </td>
-
+                            <th class="text-left" style="width: 250px; vertical-align: middle;">EMPLEADO</th>
                             @foreach ($dias as $dia)
-                                @php
-                                    $asis = \App\Models\Asistencia::where('designacione_id', $desig->id)
-                                        ->whereDate('fecha', $dia->toDateString())
-                                        ->first();
+                                <th style="font-size: 12px; vertical-align: middle;">
+                                    {{ strtoupper(str_replace('.', '', $dia->locale('es')->isoFormat('ddd DD MMM YY'))) }}
+                                </th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($designaciones as $desig)
+                            <tr>
+                                <td class="text-left">
+                                    <b>{{ $desig->empleado->nombres . ' ' . $desig->empleado->apellidos }}</b><br>
+                                    <small class="text-success"><strong>Empresa:
+                                            {{ $desig->turno->cliente->nombre ?? 'Sin empresa' }}</strong></small> <br>
+                                    @php
+                                        $dl = $desig->designaciondias;
+                                    @endphp
+                                    <small><span class="text-primary">Días Laborales:</span> [
+                                        {{ $dl->lunes ? 'Lu ' : '' }}
+                                        {{ $dl->martes ? 'Ma ' : '' }}
+                                        {{ $dl->miercoles ? 'Mi ' : '' }}
+                                        {{ $dl->jueves ? 'Ju ' : '' }}
+                                        {{ $dl->viernes ? 'Vi ' : '' }}
+                                        {{ $dl->sabado ? 'Sa ' : '' }}
+                                        {{ $dl->domingo ? 'Do ' : '' }}
+                                        ]
+                                    </small> <br>
+                                    <small class="text-info">Turno: {{ $desig->turno->nombre ?? '' }}</small>
+                                    <small>[{{ $desig->turno->horainicio ?? '' }} -
+                                        {{ $desig->turno->horafin ?? '' }}]</small>
 
-                                    $diaLibre = $desig->dialibres->firstWhere('fecha', $dia->toDateString());
+                                </td>
 
-                                    $permiso = \App\Models\Rrhhpermiso::where('empleado_id', $desig->empleado_id)
-                                        ->whereDate('fecha_inicio', '<=', $dia->toDateString())
-                                        ->whereDate('fecha_fin', '>=', $dia->toDateString())
-                                        ->where('status', 'APROBADO')
-                                        ->first();
+                                @foreach ($dias as $dia)
+                                    @php
+                                        $asis = \App\Models\Asistencia::where('designacione_id', $desig->id)
+                                            ->whereDate('fecha', $dia->toDateString())
+                                            ->first();
 
-                                    $fueraRango =
-                                        $dia->lt(Carbon\Carbon::parse($desig->fechaInicio)) ||
-                                        $dia->gt(Carbon\Carbon::parse($desig->fechaFin));
+                                        $diaLibre = $desig->dialibres->firstWhere('fecha', $dia->toDateString());
 
-                                    $horaActual = \Carbon\Carbon::now();
-                                    $horaInicioTurno = \Carbon\Carbon::parse($desig->turno->horainicio ?? '00:00');
-                                    $horaFinTurno = \Carbon\Carbon::parse($desig->turno->horafin ?? '23:59');
+                                        $permiso = \App\Models\Rrhhpermiso::where('empleado_id', $desig->empleado_id)
+                                            ->whereDate('fecha_inicio', '<=', $dia->toDateString())
+                                            ->whereDate('fecha_fin', '>=', $dia->toDateString())
+                                            ->where('status', 'APROBADO')
+                                            ->first();
 
-                                    $badges = [];
-                                    $toleranciaIngreso = $horaInicioTurno->copy()->addMinutes(5); // 5 min de tolerancia
+                                        $fueraRango =
+                                            $dia->lt(Carbon\Carbon::parse($desig->fechaInicio)) ||
+                                            $dia->gt(Carbon\Carbon::parse($desig->fechaFin));
 
-                                    if ($fueraRango) {
-                                        $badges[] = [
-                                            'class' => 'badge-secondary',
-                                            'texto' => 'S/D',
-                                            'tooltip' => 'Sin Designación',
-                                        ];
-                                    } elseif ($permiso) {
-                                        $badges[] = [
-                                            'class' => 'badge-primary',
-                                            'texto' => 'PERMISO',
-                                            'tooltip' => 'Permiso Aprobado: ' . ($permiso->motivo ?? ''),
-                                        ];
-                                    } elseif ($diaLibre) {
-                                        $badges[] = [
-                                            'class' => 'badge-info',
-                                            'texto' => 'Libre',
-                                            'tooltip' => 'Día Libre: ' . ($diaLibre->observaciones ?? ''),
-                                        ];
-                                    } elseif ($asis) {
-                                        // Ingreso
-                                        if ($asis->ingreso) {
-                                            $horaIngreso = Carbon\Carbon::parse($asis->ingreso);
-                                            if ($horaIngreso->lte($toleranciaIngreso)) {
-                                                $badgeClass = 'badge-success';
-                                                $tooltip = 'Ingreso a tiempo (' . $horaIngreso->format('H:i') . ')';
-                                            } else {
-                                                $badgeClass = 'badge-warning';
-                                                $tooltip = 'Ingreso tarde (' . $horaIngreso->format('H:i') . ')';
-                                            }
-                                            $badges[] = [
-                                                'class' => $badgeClass,
-                                                'texto' => 'I: ' . $horaIngreso->format('H:i'),
-                                                'tooltip' => $tooltip,
-                                            ];
-                                        }
+                                        $horaActual = \Carbon\Carbon::now();
+                                        $horaInicioTurno = \Carbon\Carbon::parse($desig->turno->horainicio ?? '00:00');
+                                        $horaFinTurno = \Carbon\Carbon::parse($desig->turno->horafin ?? '23:59');
 
-                                        // Salida
-                                        if ($asis->salida) {
-                                            $horaSalida = Carbon\Carbon::parse($asis->salida);
+                                        $badges = [];
+                                        $toleranciaIngreso = $horaInicioTurno->copy()->addMinutes(5); // 5 min de tolerancia
 
-                                            // Comparar solo la hora del turno con la hora de salida
-                                            $horaFinTurnoSoloHora = $horaFinTurno->format('H:i');
-                                            $horaSalidaSoloHora = $horaSalida->format('H:i');
-
-                                            if ($horaSalidaSoloHora >= $horaFinTurnoSoloHora) {
-                                                $badgeClass = 'badge-info';
-                                                $tooltip = 'Salida correcta (' . $horaSalida->format('H:i') . ')';
-                                            } else {
-                                                $badgeClass = 'badge-warning';
-                                                $tooltip =
-                                                    'Salida antes de tiempo (' . $horaSalida->format('H:i') . ')';
-                                            }
-
-                                            $badges[] = [
-                                                'class' => $badgeClass,
-                                                'texto' => 'S: ' . $horaSalida->format('H:i'),
-                                                'tooltip' => $tooltip,
-                                            ];
-                                        }
-                                    } else {
-                                        // Sin marcación
-                                        if ($dia->isToday() && $horaActual->lt($horaInicioTurno)) {
+                                        if ($fueraRango) {
                                             $badges[] = [
                                                 'class' => 'badge-secondary',
-                                                'texto' => 'S/M',
-                                                'tooltip' => 'Aún no ha comenzado su horario laboral',
+                                                'texto' => 'S/D',
+                                                'tooltip' => 'Sin Designación',
                                             ];
-                                        } elseif ($dia->lt($horaActual) || $dia->eq($horaActual->toDateString())) {
-                                            // Día activo pasado o día actual después de hora de inicio
+                                        } elseif ($permiso) {
                                             $badges[] = [
-                                                'class' => 'badge-danger',
-                                                'texto' => 'S/M',
-                                                'tooltip' => 'Sin marcación',
+                                                'class' => 'badge-primary',
+                                                'texto' => 'PERMISO',
+                                                'tooltip' => 'Permiso Aprobado: ' . ($permiso->motivo ?? ''),
                                             ];
+                                        } elseif ($diaLibre) {
+                                            $badges[] = [
+                                                'class' => 'badge-info',
+                                                'texto' => 'Libre',
+                                                'tooltip' => 'Día Libre: ' . ($diaLibre->observaciones ?? ''),
+                                            ];
+                                        } elseif ($asis) {
+                                            // Ingreso
+                                            if ($asis->ingreso) {
+                                                $horaIngreso = Carbon\Carbon::parse($asis->ingreso);
+                                                if ($horaIngreso->lte($toleranciaIngreso)) {
+                                                    $badgeClass = 'badge-success';
+                                                    $tooltip = 'Ingreso a tiempo (' . $horaIngreso->format('H:i') . ')';
+                                                } else {
+                                                    $badgeClass = 'badge-warning';
+                                                    $tooltip = 'Ingreso tarde (' . $horaIngreso->format('H:i') . ')';
+                                                }
+                                                $badges[] = [
+                                                    'class' => $badgeClass,
+                                                    'texto' => 'I: ' . $horaIngreso->format('H:i'),
+                                                    'tooltip' => $tooltip,
+                                                ];
+                                            }
+
+                                            // Salida
+                                            if ($asis->salida) {
+                                                $horaSalida = Carbon\Carbon::parse($asis->salida);
+
+                                                // Comparar solo la hora del turno con la hora de salida
+                                                $horaFinTurnoSoloHora = $horaFinTurno->format('H:i');
+                                                $horaSalidaSoloHora = $horaSalida->format('H:i');
+
+                                                if ($horaSalidaSoloHora >= $horaFinTurnoSoloHora) {
+                                                    $badgeClass = 'badge-info';
+                                                    $tooltip = 'Salida correcta (' . $horaSalida->format('H:i') . ')';
+                                                } else {
+                                                    $badgeClass = 'badge-warning';
+                                                    $tooltip =
+                                                        'Salida antes de tiempo (' . $horaSalida->format('H:i') . ')';
+                                                }
+
+                                                $badges[] = [
+                                                    'class' => $badgeClass,
+                                                    'texto' => 'S: ' . $horaSalida->format('H:i'),
+                                                    'tooltip' => $tooltip,
+                                                ];
+                                            }
                                         } else {
-                                            // Días futuros
-                                            $badges[] = ['class' => '', 'texto' => '-', 'tooltip' => ''];
+                                            // Sin marcación
+                                            if ($dia->isToday() && $horaActual->lt($horaInicioTurno)) {
+                                                $badges[] = [
+                                                    'class' => 'badge-secondary',
+                                                    'texto' => 'S/M',
+                                                    'tooltip' => 'Aún no ha comenzado su horario laboral',
+                                                ];
+                                            } elseif ($dia->lt($horaActual) || $dia->eq($horaActual->toDateString())) {
+                                                // Día activo pasado o día actual después de hora de inicio
+                                                $badges[] = [
+                                                    'class' => 'badge-danger',
+                                                    'texto' => 'S/M',
+                                                    'tooltip' => 'Sin marcación',
+                                                ];
+                                            } else {
+                                                // Días futuros
+                                                $badges[] = ['class' => '', 'texto' => '-', 'tooltip' => ''];
+                                            }
                                         }
-                                    }
-                                @endphp
+                                    @endphp
 
-                                <td style="vertical-align: middle;">
-                                    @foreach ($badges as $b)
-                                        <span class="badge {{ $b['class'] }}" data-toggle="tooltip"
-                                            title="{{ $b['tooltip'] }}">
-                                            {{ $b['texto'] }}
-                                        </span>
-                                    @endforeach
+                                    <td style="vertical-align: middle;">
+                                        @foreach ($badges as $b)
+                                            <span class="badge {{ $b['class'] }}" data-toggle="tooltip"
+                                                title="{{ $b['tooltip'] }}">
+                                                {{ $b['texto'] }}
+                                            </span>
+                                        @endforeach
 
-                                    {{-- Botón marcado manual --}}
-                                    @if ($dia->isToday() && !$fueraRango && !$diaLibre && !$permiso)
-                                        <div class="mt-1">
-                                            @if (!$asis || !$asis->ingreso)
-                                                @if ($horaActual->gte($horaInicioTurno))
-                                                    <button class="btn btn-sm btn-primary"
-                                                        wire:click="abrirMarcadoManual({{ $desig->id }}, 'ingreso')">Marcar
-                                                        Ingreso</button>
+                                        {{-- Botón marcado manual --}}
+                                        @if ($dia->isToday() && !$fueraRango && !$diaLibre && !$permiso)
+                                            <div class="mt-1">
+                                                @if (!$asis || !$asis->ingreso)
+                                                    @if ($horaActual->gte($horaInicioTurno))
+                                                        <button class="btn btn-sm btn-primary"
+                                                            wire:click="abrirMarcadoManual({{ $desig->id }}, 'ingreso')">Marcar
+                                                            Ingreso</button>
+                                                    @endif
+                                                @elseif (!$asis->salida && $this->puedeMarcarSalida($desig, $asis))
+                                                    @if ($horaActual->gte($horaFinTurno))
+                                                        <button class="btn btn-sm btn-secondary"
+                                                            wire:click="abrirMarcadoManual({{ $desig->id }}, 'salida')">Marcar
+                                                            Salida</button>
+                                                    @endif
                                                 @endif
-                                            @elseif (!$asis->salida && $this->puedeMarcarSalida($desig, $asis))
-                                                @if ($horaActual->gte($horaFinTurno))
-                                                    <button class="btn btn-sm btn-secondary"
-                                                        wire:click="abrirMarcadoManual({{ $desig->id }}, 'salida')">Marcar
-                                                        Salida</button>
-                                                @endif
-                                            @endif
-                                        </div>
-                                    @endif
-                                </td>
-                            @endforeach
+                                            </div>
+                                        @endif
+                                    </td>
+                                @endforeach
 
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="{{ count($dias) + 1 }}" class="text-center text-muted">No se encontraron
-                                registros</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="{{ count($dias) + 1 }}" class="text-center text-muted">No se encontraron
+                                    registros</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
             <div class="float-left mt-3">
                 <button class="btn btn-danger" wire:click='pdf'>Exportar <i class="fas fa-file-pdf"></i></button>
             </div>
@@ -298,8 +295,26 @@
             </div>
         </div>
     </div>
-</div>
 
+    {{-- Cortina de procesamiento --}}
+    <div wire:loading.flex>
+        <div
+            style="position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.7); z-index:1050; display:flex; align-items:center; justify-content:center;">
+            <div class="text-center">
+                <div class="spinner-border text-primary" style="width:4rem; height:4rem;"></div>
+                <h4 class="mt-3 text-dark">Procesando...</h4>
+            </div>
+        </div>
+    </div>
+</div>
+@section('css')
+    <style>
+        .table-responsive {
+            overflow-x: auto;
+            position: relative;
+        }
+    </style>
+@endsection
 @section('js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {

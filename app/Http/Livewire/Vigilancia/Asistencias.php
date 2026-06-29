@@ -7,6 +7,7 @@ use App\Models\Designacione;
 use App\Models\Empleado;
 use App\Models\Rrhhcontrato;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class Asistencias extends Component
@@ -62,14 +63,39 @@ class Asistencias extends Component
 
     public function buscar()
     {
-        $this->resultados = Asistencia::where('designacione_id', $this->designacione->id)
-            ->whereYear('fecha', $this->gestionSel)
-            ->whereMonth('fecha', $this->mesSel)
-            ->orderBy('fecha', 'asc')
-            ->get();
+
+        $this->resultados = collect(DB::select("
+    WITH RECURSIVE fechas AS (
+        SELECT DATE(CONCAT(?, '-', LPAD(?, 2, '0'), '-01')) AS fecha
+        UNION ALL
+        SELECT DATE_ADD(fecha, INTERVAL 1 DAY)
+        FROM fechas
+        WHERE fecha < LAST_DAY(CONCAT(?, '-', LPAD(?, 2, '0'), '-01'))
+    )
+    SELECT
+        f.fecha AS fecha,
+        a.id,
+        a.designacione_id,
+        a.ingreso,
+        a.salida,
+        a.estado
+
+    FROM fechas f
+    LEFT JOIN asistencias a
+        ON a.fecha = f.fecha
+        AND a.designacione_id = ?
+    ORDER BY f.fecha
+", [
+            $this->gestionSel,
+            $this->mesSel,
+            $this->gestionSel,
+            $this->mesSel,
+            $this->designacione->id
+        ]));
     }
 
-    public function generaDiasMes(){
+    public function generaDiasMes()
+    {
         $cantDias = cal_days_in_month(CAL_GREGORIAN, $this->mesSel, $this->gestionSel);
         $rangos = range(1, $cantDias);
         foreach ($rangos as $rango) {
@@ -80,13 +106,14 @@ class Asistencias extends Component
     public function updatedMesSel()
     {
         $this->generaDiasMes();
-        $this->reset('resultados','diasMes');
+        $this->reset('resultados', 'diasMes');
         $this->generaDiasMes();
     }
     public function updatedGestionSel()
     {
         $this->generaDiasMes();
-        $this->reset('resultados','diasMes');
+        $this->reset('resultados', 'diasMes');
         $this->generaDiasMes();
     }
+
 }

@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Admin;
 use App\Models\Asistencia;
 use App\Models\Designacione;
 use App\Models\Cliente;
+use App\Models\Rrhhpermiso;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -20,6 +21,7 @@ class Registroasistencias extends Component
 
     public $clientes;
     public $dias = [];
+    public $dataReporte = [];
 
     // Marcado manual
     public $marcadoEmpleado = null;
@@ -145,6 +147,7 @@ class Registroasistencias extends Component
             $asistencia->ingreso = $horaCompleta;
         } elseif ($this->marcadoTipo === 'salida') {
             $asistencia->salida = $horaCompleta;
+            $asistencia->estado = true;
         }
 
         $asistencia->save();
@@ -201,6 +204,8 @@ class Registroasistencias extends Component
 
         $designaciones = $query->get();
 
+
+
         $data = [];
 
         foreach ($designaciones as $desig) {
@@ -213,15 +218,37 @@ class Registroasistencias extends Component
             ];
 
             foreach ($dias as $dia) {
+                $observaciones = 'Asistencia Completa';
                 $asis = Asistencia::where('designacione_id', $desig->id)
                     ->whereDate('fecha', $dia->toDateString())
                     ->first();
 
+                // Verificar si tiene permiso
+                $permiso = Rrhhpermiso::where('empleado_id', $desig->empleado_id)
+                    ->whereDate('fecha_inicio', '<=', $dia->toDateString())
+                    ->whereDate('fecha_fin', '>=', $dia->toDateString())
+                    ->where('status', 'APROBADO')
+                    ->first();
+
+
                 // Verificar si el día es libre
                 $diaLibre = $desig->dialibres->firstWhere('fecha', $dia->toDateString());
 
+
                 // Si fuera del rango de la designación
                 $fueraRango = $dia->lt(Carbon::parse($desig->fechaInicio)) || $dia->gt(Carbon::parse($desig->fechaFin));
+                if ($asis && !$asis->estado) {
+                    $observaciones = 'SIN MARCADO SALIDA';
+                } elseif ($permiso) {
+                    $observaciones = $permiso->rrhhtipopermiso->nombre;
+                } elseif ($diaLibre) {
+                    $observaciones = 'Día Libre';
+                } elseif ($fueraRango) {
+                    $observaciones = 'Fuera de la Designación';
+                } elseif (!$asis && !$diaLibre && !$fueraRango) {
+                    $observaciones = 'FALTA INJUSTIFICADA';
+                }
+
 
                 $empleadoData['asistencias'][] = [
                     'fecha' => $dia->toDateString(),
@@ -230,13 +257,15 @@ class Registroasistencias extends Component
                     'sin_marcacion' => !$asis && !$diaLibre && !$fueraRango,
                     'fuera_rango' => $fueraRango,
                     'dia_libre' => $diaLibre ? true : false,
-                    'observaciones_libre' => $diaLibre->observaciones ?? ''
+                    'permiso' => $permiso ? true : false,
+                    'observaciones_libre' => $diaLibre->observaciones ?? '',
+                    'observaciones' => $observaciones ?? '',
                 ];
             }
 
             $data[] = $empleadoData;
         }
-
+        // dd($data);
         return $data;
     }
 

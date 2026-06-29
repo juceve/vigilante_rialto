@@ -19,6 +19,7 @@ use App\Models\Marcacione;
 use App\Models\Regronda;
 use App\Models\Rondaejecutada;
 use App\Models\Rrhhcontrato;
+use App\Models\Rrhhpermiso;
 use App\Models\Tarea;
 use App\Models\Usercliente;
 use App\Models\Vwnovedade;
@@ -1103,22 +1104,61 @@ function traeDesignacionSupervisorActiva($empleado_id)
 }
 
 function calcularDistancia($lat1, $lon1, $lat2, $lon2)
-    {
-        $earthRadius = 6371000;
+{
+    $earthRadius = 6371000;
 
-        $lat1 = deg2rad($lat1);
-        $lon1 = deg2rad($lon1);
-        $lat2 = deg2rad($lat2);
-        $lon2 = deg2rad($lon2);
+    $lat1 = deg2rad($lat1);
+    $lon1 = deg2rad($lon1);
+    $lat2 = deg2rad($lat2);
+    $lon2 = deg2rad($lon2);
 
-        $dLat = $lat2 - $lat1;
-        $dLon = $lon2 - $lon1;
+    $dLat = $lat2 - $lat1;
+    $dLon = $lon2 - $lon1;
 
-        $a = sin($dLat / 2) * sin($dLat / 2) +
-            cos($lat1) * cos($lat2) *
-            sin($dLon / 2) * sin($dLon / 2);
+    $a = sin($dLat / 2) * sin($dLat / 2) +
+        cos($lat1) * cos($lat2) *
+        sin($dLon / 2) * sin($dLon / 2);
 
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
-        return $earthRadius * $c;
+    return $earthRadius * $c;
+}
+
+function validarFalta($desig, $empleado_id,  $contraActivo, $dia)
+{
+    $observaciones = 'Asistencia Completa';
+    $asis = Asistencia::where('designacione_id', $desig->id)
+        ->whereDate('fecha', $dia)
+        ->first();
+
+    // Verificar si tiene permiso
+    $permiso = Rrhhpermiso::where('empleado_id', $desig->empleado_id)
+        ->whereDate('fecha_inicio', '<=', $dia)
+        ->whereDate('fecha_fin', '>=', $dia)
+        ->where('status', 'APROBADO')
+        ->first();
+
+
+    // Verificar si el día es libre
+    $diaLibre = $desig->dialibres->firstWhere('fecha', $dia);
+
+
+    // Si fuera del rango de la designación
+    // $fueraRango = $dia->lt(Carbon::parse($desig->fechaInicio)) || $dia->gt(Carbon::parse($desig->fechaFin));
+    $fueraRango = Carbon::parse($dia)->lt(Carbon::parse($desig->fechaInicio))
+        || Carbon::parse($dia)->gt(Carbon::parse($desig->fechaFin));
+    if ($asis && !$asis->estado) {
+        $observaciones = 'SIN MARCADO SALIDA';
+    } elseif ($permiso) {
+        $observaciones = $permiso->rrhhtipopermiso->nombre;
+    } elseif ($diaLibre) {
+        $observaciones = 'Día Libre';
+    } elseif ($fueraRango) {
+        $observaciones = 'Fuera de la Designación';
+    } elseif ($dia >= date('Y-m-d')) {
+        $observaciones = 'PENDIENTE';
+    } elseif (!$asis && !$diaLibre && !$fueraRango) {
+        $observaciones = 'FALTA INJUSTIFICADA';
     }
+    return $observaciones;
+}

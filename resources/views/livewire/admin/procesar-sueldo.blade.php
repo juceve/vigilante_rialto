@@ -9,8 +9,7 @@
             </span>
 
             <div class="float-right">
-                <a href="{{route('admin.sueldos')}}" class="btn btn-info  float-right"
-                    data-placement="left">
+                <a href="{{ route('admin.sueldos') }}" class="btn btn-info  float-right" data-placement="left">
                     <i class="fas fa-arrow-left"></i> Volver
                 </a>
             </div>
@@ -95,15 +94,48 @@
 
 
             </div>
-            <div class="card-body table-responsive">
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text" id="basic-addon1"><i class="fas fa-search"></i></span>
-                    </div>
-                    <input type="search" class="form-control" placeholder="Buscar por Empleado"
-                        wire:model.debounce.800ms="search">
-                </div>
 
+            <div class="card-body table-responsive">
+                <label class="text-secondary"><i class="fas fa-filter"></i> Filtros</label>
+                <div class="row">
+                    <div class="col-12 col-md-6 ">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1"><i class="fas fa-search"></i></span>
+                            </div>
+                            <input type="search" class="form-control" placeholder="Buscar por Empleado"
+                                wire:model.debounce.800ms="search">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 ">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1"><strong>Clientes</strong></span>
+                            </div>
+                            <select class="form-control" wire:model="clienteSeleccionado"
+                                @if ($procesado) disabled @endif>
+                                <option value="">Todos</option>
+                                @foreach ($clientes as $cliente)
+                                    <option value="{{ $cliente }}">{{ $cliente }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <h3
+                    class="text-center @if ($procesado) text-success
+                @else
+                    text-secondary @endif">
+                    <span id="titulo">
+                        PLANILLA
+                        @if ($clienteSeleccionado == '')
+                            GENERAL DE SUELDOS
+                        @else
+                            DE SUELDOS - {{ $clienteSeleccionado }}
+                        @endif
+                    </span>
+                </h3>
                 <table class="table table-bordered table-hover text-center table-sm mb-0" id="tablaContratos">
                     <thead
                         class="
@@ -150,7 +182,8 @@
                                             |
                                             Fin:
                                             {{ $contrato['fecha_fin'] == 'Indefinido' ? 'Indefinido' : \Carbon\Carbon::parse($contrato['fecha_fin'])->format('d/m/Y') }}<br>
-                                            Tipo: {{ $contrato['tipo_contrato'] ?? 'N/A' }}
+                                            Tipo: {{ $contrato['tipo_contrato'] ?? 'N/A' }} <br>
+                                            <strong>Designado: {{ $contrato['cliente_actual'] }}</strong>
                                         </small>
                                     </td>
 
@@ -635,18 +668,29 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Confirmación antes de guardar
             document.getElementById('btn-registrar-resultados').addEventListener('click', function() {
+                let titulo = document.getElementById('titulo').innerText;
                 Swal.fire({
                     title: '¿Está seguro?',
                     text: '¿Desea registrar los resultados de sueldos? Esta acción no se puede deshacer.',
                     icon: 'warning',
+                    input: 'text', // 👈 aquí defines el input
+                    inputLabel: 'Título del registro',
+                    inputPlaceholder: 'Ingrese un título...',
+                    inputValue: titulo, // 👈 valor inicial
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#d33',
                     confirmButtonText: 'Sí, registrar',
-                    cancelButtonText: 'Cancelar'
+                    cancelButtonText: 'Cancelar',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Debes ingresar un título';
+                        }
+                    }
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        Livewire.emit('guardarSueldos');
+                        let tituloF = result.value; // 👈 capturas el valor
+                        Livewire.emit('guardarSueldos', tituloF);
                     }
                 });
             });

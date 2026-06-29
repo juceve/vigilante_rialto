@@ -35,18 +35,46 @@ class ProcesarSueldo extends Component
     public $contratosSeleccionados = [];
     public $seleccionarTodos = false;
     public $contratoSeleccionado = null;
+    public $clientes = [], $clienteSeleccionado = "";
 
     public $search = "";
     protected $paginationTheme = 'bootstrap'; // opcional
 
     protected $listeners = ['guardarSueldos', 'setContratosSeleccionados'];
 
+    public function mount($rrhhsueldo_id)
+    {
+        $this->rrhhsueldo = Rrhhsueldo::findOrFail($rrhhsueldo_id);
+
+        $this->contratos = $this->mapContratos($this->getContratosVigentes());
+
+        $this->clientes = collect($this->contratos)
+            ->pluck('cliente_actual')
+            ->unique()
+            ->values();
+
+        $this->feriados = $this->getFeriadosMes();
+    }
+
     public function render()
     {
-        $contratos = collect($this->contratos) // tu array
+        $contratos = collect($this->contratos)
             ->filter(function ($item) {
-                return str_contains(strtolower($item['nombres']), strtolower($this->search)) || str_contains(strtolower($item['apellidos']), strtolower($this->search));
+
+                $matchTexto =
+                    str_contains(strtolower($item['nombres']), strtolower($this->search)) ||
+                    str_contains(strtolower($item['apellidos']), strtolower($this->search));
+
+                $matchCliente =
+                    !$this->clienteSeleccionado || // si no seleccionó nada
+                    $item['cliente_actual'] == $this->clienteSeleccionado;
+
+                return $matchTexto && $matchCliente;
             });
+        // $contratos = collect($this->contratos) // tu array
+        //     ->filter(function ($item) {
+        //         return str_contains(strtolower($item['nombres']), strtolower($this->search)) || str_contains(strtolower($item['apellidos']), strtolower($this->search));
+        //     });
         $this->emit('dataTableRender');
 
         $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -67,23 +95,45 @@ class ProcesarSueldo extends Component
     {
         $this->resetPage();
     }
-
-    public function mount($rrhhsueldo_id)
+    public function updatedClienteSeleccionado()
     {
-        $this->rrhhsueldo = Rrhhsueldo::findOrFail($rrhhsueldo_id);
+        $this->reset('contratosSeleccionados');
+        $this->resetPage();
+    }
 
-        $this->contratos = $this->mapContratos($this->getContratosVigentes());
+    private function getContratosFiltrados()
+    {
+        return collect($this->contratos)
+            ->filter(function ($item) {
 
-        $this->feriados = $this->getFeriadosMes();
+                $search = strtolower($this->search);
+
+                $matchTexto =
+                    str_contains(strtolower($item['nombres']), $search) ||
+                    str_contains(strtolower($item['apellidos']), $search);
+
+                $matchCliente =
+                    !$this->clienteSeleccionado ||
+                    strtolower($item['cliente_actual']) === strtolower($this->clienteSeleccionado);
+
+                return $matchTexto && $matchCliente;
+            });
     }
 
     public function updatedSeleccionarTodos($value)
     {
         if ($value) {
-            $this->contratosSeleccionados = collect($this->contratos)->pluck('id')->toArray();
+            $this->contratosSeleccionados = $this->getContratosFiltrados()
+                ->pluck('id')
+                ->toArray();
         } else {
             $this->contratosSeleccionados = [];
         }
+        // if ($value) {
+        //     $this->contratosSeleccionados = collect($this->contratos)->pluck('id')->toArray();
+        // } else {
+        //     $this->contratosSeleccionados = [];
+        // }
     }
 
     public function updatedContratosSeleccionados()
@@ -93,8 +143,49 @@ class ProcesarSueldo extends Component
 
     protected function mapContratos($contratos)
     {
-        return $contratos->map(function ($contrato) {
+        $anio = $this->rrhhsueldo->gestion;
+        $mes  = $this->rrhhsueldo->mes;
+
+
+
+        $fechaInicioMes = Carbon::create($anio, $mes, 1)->startOfDay();
+        $fechaFinMes    = Carbon::create($anio, $mes, 1)->endOfMonth()->endOfDay();
+        return $contratos->map(function ($contrato) use ($fechaInicioMes, $fechaFinMes) {
             $dias_tipo = $contrato->rrhhtipocontrato->cantidad_dias ?? 30;
+            // dd($contrato);
+            $designacion = Designacione::where('empleado_id', $contrato->empleado_id)
+                ->where('tipo', 'NORMAL')
+                ->where('estado', 1)
+                ->where(function ($q) use ($fechaInicioMes, $fechaFinMes) {
+
+                    $q->whereBetween('fechaInicio', [$fechaInicioMes, $fechaFinMes])
+                        ->orWhereBetween('fechaFin', [$fechaInicioMes, $fechaFinMes])
+                        ->orWhere(function ($q2) use ($fechaInicioMes, $fechaFinMes) {
+                            $q2->where('fechaInicio', '<=', $fechaInicioMes)
+                                ->where('fechaFin', '>=', $fechaFinMes);
+                        });
+                })
+                ->orderBy('id', 'DESC')
+                ->first();
+
+            $cliente_actual = "SIN DESIGNACION";
+            if ($designacion) {
+
+                switch ($designacion->tipo_designacion) {
+                    case 'GUARDIA':
+                        if ($designacion->turno_id != null) {
+                            $cliente_actual = $designacion->turno->cliente ? $designacion->turno->cliente->nombre : $designacion->id;
+                        }
+                        break;
+                    case 'ADMIN':
+                        $cliente_actual = "PERSONAL ADMINISTRATIVO";
+                        break;
+
+                    default:
+                        $cliente_actual = $designacion->tipo_designacion;
+                        break;
+                }
+            }
 
             return
                 [
@@ -125,6 +216,7 @@ class ProcesarSueldo extends Component
                     'bonos' => [],
                     'descuentos' => [],
                     'adelantos' => [],
+                    'cliente_actual' => $cliente_actual,
                 ];
         })->toArray();
     }
@@ -430,6 +522,10 @@ class ProcesarSueldo extends Component
             if ($liquido_ajustado < 0) {
                 $liquido_ajustado = 0;
             }
+            $contratoOriginal = collect($this->contratos)
+                ->filter(function ($item) use ($contrato) {
+                    return $item['id'] == $contrato->id;
+                });
             $contratos[] = [
                 'id' => $contrato->id,
                 'empleado_id' => $contrato->empleado->id,
@@ -458,6 +554,7 @@ class ProcesarSueldo extends Component
                 'bonos' => $bonos,
                 'descuentos' => $descuentos,
                 'adelantos' => $adelantos,
+                'cliente_actual' => $contratoOriginal->first()['cliente_actual'],
             ];
         }
         $this->contratos = $contratos;
@@ -928,7 +1025,7 @@ class ProcesarSueldo extends Component
         return $feriados;
     }
 
-    public function guardarSueldos()
+    public function guardarSueldos($titulo)
     {
         DB::beginTransaction();
         try {
@@ -965,7 +1062,11 @@ class ProcesarSueldo extends Component
                     }
                 }
             }
+
             $this->rrhhsueldo->estado = 'PROCESADO';
+            $this->rrhhsueldo->titulo = $titulo;
+            $this->rrhhsueldo->fecha = date('Y-m-d');
+            $this->rrhhsueldo->hora = date('H:i:s');
             $this->rrhhsueldo->save();
             DB::commit();
             return redirect()->route('admin.sueldos')->with('success', 'Resultados registrados correctamente.');

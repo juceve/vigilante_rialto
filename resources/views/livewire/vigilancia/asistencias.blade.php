@@ -102,29 +102,30 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($diasMes as $dia)
-                @php
-                // Buscamos la asistencia correspondiente a este día
-                $asistenciaDia = collect($resultados)->first(function ($a) use ($dia) {
-                    return substr($a->ingreso, 0, 10) == $dia || substr($a->salida, 0, 10) == $dia;
-                });
-                @endphp
+                @foreach ($resultados as $asistenciaDia)
+
+                @if (is_null($asistenciaDia->ingreso)||$asistenciaDia->estado==false)
+                    @php
+                    $observacion="";
+                        $observacion = validarFalta($designacione,$empleado->id,$contratoActivo->id,$asistenciaDia->fecha);
+                    @endphp
+                @endif
 
                 <tr class="text-center">
-                    <td class="align-middle"><strong>{{ $dia }}</strong></td>
+                    <td class="align-middle"><strong>{{ $asistenciaDia->fecha }}</strong></td>
 
                     {{-- Columna Ingreso --}}
                     <td class="align-middle">
                         {!! $asistenciaDia && $asistenciaDia->ingreso
                         ?'<strong class="text-primary">' . substr($asistenciaDia->ingreso, 0, 10) . '<br>' . substr($asistenciaDia->ingreso, 11, 8) . '</strong>'
-                        : 'Sin marcado' !!}
+                        : $observacion !!}
                     </td>
 
                     {{-- Columna Salida --}}
                     <td class="align-middle">
                         {!! $asistenciaDia && $asistenciaDia->salida
                         ? '<strong class="text-blue">'.substr($asistenciaDia->salida, 0, 10) . '<br>' . substr($asistenciaDia->salida, 11, 8).'</strong>'
-                        : 'Sin marcado' !!}
+                        : $observacion !!}
                     </td>
                 </tr>
                 @endforeach

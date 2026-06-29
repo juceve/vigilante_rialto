@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('telefono_panico',30)->nullable();
             $table->decimal('asistencia_sin_salida', 8, 2)->default(0);
             $table->decimal('falta_dia_completo', 8, 2)->default(0);
+            $table->decimal('salida_antes_tiempo', 8, 2)->default(0);
             $table->timestamps();
         });
     }

@@ -116,6 +116,7 @@ use App\Http\Livewire\Vigilancia\Vacaciones;
 use App\Http\Livewire\Vigilancia\Vtareas;
 
 use App\Http\Controllers\NotificationsController;
+use App\Http\Controllers\RecorridosupController;
 use App\Http\Controllers\RrhhcontratoController;
 use App\Http\Controllers\TipoboletaController;
 use App\Http\Livewire\Admin\CajaChica;
@@ -300,6 +301,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('admin/rrhh/tipo-descuentos', RrhhtipodescuentoController::class)->names('rrhhtipodescuentos');
     Route::resource('admin/rrhh/estado-dotaciones', RrhhestadodotacionController::class)->names('rrhhestadodotacions');
     Route::resource('admin/parametros-generales', SistemaparametroController::class)->only(['edit', 'update', 'index'])->names('sistemaparametros');
+
     Route::resource('admin/tipo-boletas', TipoboletaController::class)->names('tipoboletas');
     Route::post('trae-tipodescuento', [RrhhtipodescuentoController::class, 'traeTipodescuento'])->name('traetipodescuento');
     // Route::resource('admin/tareas', TareaController::class)->names('tareas');
@@ -375,12 +377,16 @@ Route::middleware(['auth'])->group(function () {
 
     // RUTAS DEL NAVBAR
 
-
     Route::get('notifications/get', [NotificationsController::class, 'getNotificationsData'])
         ->name('notifications.get');
 
     // Route::get('notifications/show', [NotificationsController::class, 'showAll'])
     //     ->name('notifications.show');
+
+    Route::post('/tracking/location', [RecorridosupController::class, 'store'])
+        ->middleware('auth');
+    Route::get('/recorridos/mapa', [RecorridosupController::class, 'mapa'])
+        ->middleware('auth');
 });
 
 Route::middleware('throttle:10,1')->get('formulario-cobro/{link_id}', [FormularioAirbnbController::class, 'cobro'])->name('formcobro');

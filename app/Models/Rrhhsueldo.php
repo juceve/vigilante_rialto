@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Rrhhsueldo extends Model
 {
-    
+
     static $rules = [
 		'gestion' => 'required',
 		'mes' => 'required',
@@ -41,7 +41,7 @@ class Rrhhsueldo extends Model
      *
      * @var array
      */
-    protected $fillable = ['gestion','mes','fecha','hora','user_id','estado'];
+    protected $fillable = ['gestion','mes','titulo','fecha','hora','user_id','estado'];
 
 
     /**
@@ -51,7 +51,7 @@ class Rrhhsueldo extends Model
     {
         return $this->hasMany('App\Models\Rrhhsueldoempleado', 'rrhhsueldo_id', 'id');
     }
-    
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
@@ -59,6 +59,6 @@ class Rrhhsueldo extends Model
     {
         return $this->hasOne('App\Models\User', 'id', 'user_id');
     }
-    
+
 
 }

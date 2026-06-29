@@ -88,6 +88,13 @@
                                         <i class="fa fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                     @endif
                                 </th>
+
+                                <th class="text-left" style="cursor:pointer" wire:click="sortBy('titulo')">
+                                    Titulo
+                                    @if ($sortField === 'titulo')
+                                        <i class="fa fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                                    @endif
+                                </th>
                                 <th style="cursor:pointer" wire:click="sortBy('gestion')">
                                     Gestión
                                     @if ($sortField === 'gestion')
@@ -100,23 +107,27 @@
                                         <i class="fa fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                     @endif
                                 </th>
-                                <th style="cursor:pointer" wire:click="sortBy('fecha')">
-                                    Fecha
-                                    @if ($sortField === 'fecha')
-                                        <i class="fa fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                                    @endif
-                                </th>
-                                <th style="cursor:pointer" wire:click="sortBy('hora')">
+
+                                {{-- <th style="cursor:pointer" wire:click="sortBy('hora')">
                                     Hora
                                     @if ($sortField === 'hora')
                                         <i class="fa fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                     @endif
-                                </th>
+                                </th> --}}
                                 <th style="cursor:pointer" wire:click="sortBy('estado')">
                                     Estado
                                     @if ($sortField === 'estado')
                                         <i class="fa fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                     @endif
+                                </th>
+                                <th style="cursor:pointer; width: 170px" wire:click="sortBy('created_at')">
+                                    Creado
+                                    @if ($sortField === 'created_at')
+                                        <i class="fa fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                                    @endif
+                                </th>
+                                <th style="cursor:pointer; width: 170px">
+                                    Procesado
                                 </th>
                                 <th class="text-right">Acciones</th>
                             </tr>
@@ -125,10 +136,12 @@
                             @forelse($sueldos as $sueldo)
                                 <tr class="text-center">
                                     <td>{{ $sueldo->id }}</td>
+
+                                    <td class="text-left">{{ $sueldo->titulo ?: '--' }}</td>
                                     <td>{{ $sueldo->gestion }}</td>
                                     <td>{{ $meses_es[$sueldo->mes] ?? $sueldo->mes }}</td>
-                                    <td>{{ $sueldo->fecha }}</td>
-                                    <td>{{ $sueldo->hora }}</td>
+
+                                    {{-- <td>{{ $sueldo->hora }}</td> --}}
                                     {{-- <td>{{ optional($sueldo->user)->name ?? '-' }}</td> --}}
                                     <td>
                                         @if ($sueldo->estado == 'CREADO')
@@ -139,6 +152,14 @@
                                             <span class="badge badge-secondary">Anulado</span>
                                         @else
                                             <span class="badge badge-warning">{{ $sueldo->estado }}</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $sueldo->created_at }}</td>
+                                    <td>
+                                        @if ($sueldo->estado === 'PROCESADO')
+                                            {{ $sueldo->fecha . ' ' . $sueldo->hora }}
+                                        @else
+                                            --
                                         @endif
                                     </td>
                                     <td class="text-right">
@@ -212,12 +233,20 @@
                             Nuevo Sueldo
                         @endif
                     </h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" wire:click="closeModal">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        wire:click="closeModal">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <form wire:submit.prevent="saveSueldo">
                     <div class="modal-body">
+                        @if ($editMode)
+                            <div class="form-group">
+                                <label for="gestion">Titulo</label>
+                                <input type="text" wire:model.defer="titulo" class="form-control" id="titulo"
+                                    placeholder="Titulo del Registro">
+                            </div>
+                        @endif
                         <div class="form-group">
                             <label for="gestion">Gestión (Año)</label>
                             <input type="number" wire:model.defer="gestion" class="form-control" id="gestion"
@@ -255,7 +284,8 @@
 
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal" wire:click="closeModal">Cancelar</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                            wire:click="closeModal">Cancelar</button>
                         <button type="submit" class="btn btn-primary" onclick="cerrarModal()">
                             @if ($editMode)
                                 Actualizar

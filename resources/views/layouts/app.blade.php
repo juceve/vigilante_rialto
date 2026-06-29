@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="light only">
     <meta name="supported-color-schemes" content="light">
     <title>@yield('title') | {{ strtoupper(config('app.name')) }}</title>
@@ -655,6 +656,64 @@
         }
     </script>
     @yield('js2')
+
+    @if (session('designacion-super'))
+        {{-- <script>
+            (function() {
+
+                let lastSent = 0;
+
+                function enviar(lat, lng) {
+
+                    fetch('/tracking/location', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            latitud: lat,
+                            longitud: lng
+                        })
+                    });
+                }
+
+                function obtenerGPS() {
+
+                    if (!navigator.geolocation) return;
+
+                    navigator.geolocation.getCurrentPosition((pos) => {
+
+                        let now = Date.now();
+
+                        let lat = pos.coords.latitude;
+                        let lng = pos.coords.longitude;
+
+                        // 🔥 control global real (3 min)
+                        if (now - lastSent >= 5000) {
+
+                            enviar(lat, lng);
+                            lastSent = now;
+
+                        }
+
+                    }, (err) => {
+                        console.log("GPS error:", err);
+                    }, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                }
+
+                // 🔥 corre siempre aunque cambies de página
+                setInterval(obtenerGPS, 30000); // revisa cada 30s
+
+                obtenerGPS();
+
+            })();
+        </script> --}}
+    @endif
 </body>
 
 </html>

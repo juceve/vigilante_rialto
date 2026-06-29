@@ -23,6 +23,7 @@ class ManageSueldos extends Component
     public $editMode = false;
     public $sueldo_id;
     public $gestion;
+    public $titulo;
     public $mes;
     public $fecha;
     public $hora;
@@ -98,6 +99,7 @@ class ManageSueldos extends Component
         $this->sueldo_id = $sueldo->id;
         $this->gestion = $sueldo->gestion;
         $this->mes = $sueldo->mes;
+        $this->titulo = $sueldo->titulo;
         $this->fecha = $sueldo->fecha;
         $this->hora = $sueldo->hora;
         $this->user_id = $sueldo->user_id;
@@ -119,6 +121,10 @@ class ManageSueldos extends Component
         if ($this->editMode && $this->sueldo_id) {
             $sueldo = Rrhhsueldo::findOrFail($this->sueldo_id);
             $sueldo->estado = $this->estado;
+            if (!is_null($this->titulo)) {
+                $sueldo->titulo = $this->titulo;
+            }
+
 
             // restablecer los bonos pagados si el sueldo se anula
             if ($this->estado === 'ANULADO') {

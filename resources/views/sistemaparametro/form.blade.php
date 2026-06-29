@@ -22,6 +22,7 @@
             {!! $errors->first('falta_dia_completo', '<div class="invalid-feedback">:message</div>') !!}
         </div>
 
+
     </div>
     <div class="box-footer mt20">
         <button type="submit" class="btn btn-primary">Guardar <i class="fas fa-save"></i></button>
