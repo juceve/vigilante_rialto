@@ -19,8 +19,8 @@ class Sistemaparametro extends Model
 {
 
     static $rules = [
-		'tolerancia_ingreso' => 'required',
-		'falta_dia_completo' => 'required|numeric|min:0'
+        'tolerancia_ingreso' => 'required',
+        'falta_dia_completo' => 'required|numeric|min:0'
     ];
 
     protected $perPage = 20;
@@ -30,8 +30,15 @@ class Sistemaparametro extends Model
      *
      * @var array
      */
-    protected $fillable = ['tolerancia_ingreso', 'telefono_panico', 'asistencia_sin_salida', 'falta_dia_completo'];
+    protected $fillable = ['tolerancia_ingreso', 'telefono_panico', 'asistencia_sin_salida', 'falta_dia_completo', 'salida_anticipada', 'ingreso_atrasado'];
 
+    public function salidaAntesTiempo()
+    {
+        return $this->hasOne('App\Models\Rrhhtipodescuento', 'id', 'salida_anticipada');
+    }
 
-
+    public function marcadoAtrasado()
+    {
+        return $this->hasOne('App\Models\Rrhhtipodescuento', 'id', 'ingreso_atrasado');
+    }
 }

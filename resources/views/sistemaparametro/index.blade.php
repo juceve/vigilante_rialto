@@ -35,7 +35,8 @@
                                         <th>Telf. Panico</th>
                                         <th>Desc No Marcar Salida</th>
                                         <th>Desc Inasistencia</th>
-                                        {{-- <th>Desc Marcar antes de tiempo</th> --}}
+                                        <th>Desc Salida Anticipada</th>
+                                        <th>Desc Marcado Atrasado</th>
 
                                         <th></th>
                                     </tr>
@@ -49,13 +50,16 @@
                                             <td>{{ $sistemaparametro->telefono_panico }}</td>
                                             <td>{{ $sistemaparametro->asistencia_sin_salida }}</td>
                                             <td>{{ $sistemaparametro->falta_dia_completo }}</td>
-                                            {{-- <td>{{ $sistemaparametro->salida_antes_tiempo }}</td> --}}
+                                            <td>{{ $sistemaparametro->salida_anticipada ? number_format($sistemaparametro->salidaAntesTiempo->monto, 2) : '--' }}
+                                            </td>
+                                            <td>{{ $sistemaparametro->ingreso_atrasado ? number_format($sistemaparametro->marcadoAtrasado->monto, 2) : '--' }}
+                                            </td>
 
                                             <td class="text-right">
                                                 @can('sistemaparametros.edit')
                                                     <a class="btn btn-sm btn-success"
-                                                    href="{{ route('sistemaparametros.edit', $sistemaparametro->id) }}"
-                                                    title="Editar"><i class="fa fa-fw fa-edit"></i> Editar</a>
+                                                        href="{{ route('sistemaparametros.edit', $sistemaparametro->id) }}"
+                                                        title="Editar"><i class="fa fa-fw fa-edit"></i> Editar</a>
                                                 @endcan
 
                                             </td>

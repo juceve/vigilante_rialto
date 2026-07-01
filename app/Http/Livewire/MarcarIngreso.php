@@ -50,6 +50,7 @@ class MarcarIngreso extends Component
 
     public function marcar()
     {
+        $sistemaparametros = Sistemaparametro::get()->first();
         if ($this->bloqueado) return;
         $this->bloqueado = true;
 
@@ -103,7 +104,8 @@ class MarcarIngreso extends Component
         if ($minutosRetraso > ($tolerancia)) {
             // Solo crear descuento si hay contrato
             if ($this->contrato) {
-                $tipodescuento = Rrhhtipodescuento::find(1);
+
+                $tipodescuento = Rrhhtipodescuento::find($sistemaparametros->ingreso_atrasado);
                 if ($tipodescuento) {
                     Rrhhdescuento::create([
                         "rrhhcontrato_id" => $this->contrato->id,

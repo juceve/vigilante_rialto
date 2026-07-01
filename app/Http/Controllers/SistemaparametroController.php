@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rrhhtipodescuento;
 use App\Models\Sistemaparametro;
 use Illuminate\Http\Request;
 
@@ -25,8 +26,9 @@ class SistemaparametroController extends Controller
     public function edit($id)
     {
         $sistemaparametro = Sistemaparametro::find($id);
+        $tiposdescuentos = Rrhhtipodescuento::selectRaw("id, CONCAT(nombre, ' - ', monto) as nombre_completo")->pluck('nombre_completo', 'id');
 
-        return view('sistemaparametro.edit', compact('sistemaparametro'));
+        return view('sistemaparametro.edit', compact('sistemaparametro','tiposdescuentos'));
     }
 
     public function update(Request $request, $sistemaparametro_id)

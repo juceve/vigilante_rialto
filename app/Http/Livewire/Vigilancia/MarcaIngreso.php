@@ -44,6 +44,7 @@ class MarcaIngreso extends Component
 
     public function marcar()
     {
+        $sistemaparametros = Sistemaparametro::get()->first();
         $latCliente = $this->designacione->turno->cliente->latitud;
         $lngCliente = $this->designacione->turno->cliente->longitud;
 
@@ -84,7 +85,7 @@ class MarcaIngreso extends Component
         }
 
         if ($minutosRetraso > ($tolerancia)) {
-            $tipodescuento = Rrhhtipodescuento::find(1);
+            $tipodescuento = Rrhhtipodescuento::find($sistemaparametros->ingreso_atrasado);
             $descuento = Rrhhdescuento::create([
                 "rrhhcontrato_id" => $this->contrato->id,
                 "fecha" => date('Y-m-d'),

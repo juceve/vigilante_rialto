@@ -6,6 +6,7 @@ use App\Models\Asistencia;
 use App\Models\Designacione;
 use App\Models\Rrhhdescuento;
 use App\Models\Rrhhtipodescuento;
+use App\Models\Sistemaparametro;
 use DateTime;
 use Illuminate\Support\Facades\Session;
 use Livewire\Component;
@@ -26,7 +27,7 @@ class MarcarSalida extends Component
     {
         $hoy = date('Y-m-d');
         $ayer = (new DateTime($hoy))->modify('-1 days')->format('Y-m-d');
-
+        $sistemaparametros = Sistemaparametro::get()->first();
         if ($this->designacione->designacionturno->turnoguardia->horainicio < $this->designacione->designacionturno->turnoguardia->horafin) {
             $asistencia = Asistencia::where([
                 ['fecha', $hoy],
@@ -60,12 +61,12 @@ class MarcarSalida extends Component
             Session::put('asistencia_operador', false);
             if ($marcacionAntes) {
                 $contrato = traeContratoActivoEmpleadoId($this->designacione->empleado_id);
-                $tipodescuento = Rrhhtipodescuento::find(23);
+                $tipodescuento = Rrhhtipodescuento::find($sistemaparametros->salida_anticipada);
                 $descuento = Rrhhdescuento::create(
                     [
                         'rrhhcontrato_id' => $contrato->id,
                         'fecha' => date('Y-m-d'),
-                        'rrhhtipodescuento_id' => 23,
+                        'rrhhtipodescuento_id' => $sistemaparametros->salida_anticipada,
                         'empleado_id' => $this->designacione->empleado_id,
                         'cantidad' => 1,
                         'monto' => $tipodescuento->monto,
